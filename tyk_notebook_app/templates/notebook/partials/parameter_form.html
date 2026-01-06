@@ -1,0 +1,65 @@
+<!-- Parameter form partial for AJAX loading -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    {% for param in parameters %}
+    <div class="param-group">
+        <label class="block text-sm font-medium text-gray-700 mb-1">
+            {{ param.name }}
+        </label>
+
+        {% if param.type == 'dropdown' %}
+        <select name="{{ param.name }}"
+                class="param-input w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                data-cell-id="{{ cell.id }}"
+                data-param-name="{{ param.name }}">
+            {% for option in param.options %}
+            <option value="{{ option }}" {% if option == param.value %}selected{% endif %}>
+                {{ option }}
+            </option>
+            {% endfor %}
+        </select>
+
+        {% elif param.type == 'number' %}
+        <input type="number"
+               name="{{ param.name }}"
+               value="{{ param.value }}"
+               {% if param.min is not None %}min="{{ param.min }}"{% endif %}
+               {% if param.max is not None %}max="{{ param.max }}"{% endif %}
+               {% if param.step is not None %}step="{{ param.step }}"{% endif %}
+               class="param-input w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+               data-cell-id="{{ cell.id }}"
+               data-param-name="{{ param.name }}">
+
+        {% elif param.type == 'boolean' %}
+        <input type="checkbox"
+               name="{{ param.name }}"
+               {% if param.value %}checked{% endif %}
+               class="param-input h-4 w-4 text-blue-600 border-gray-300 rounded"
+               data-cell-id="{{ cell.id }}"
+               data-param-name="{{ param.name }}">
+
+        {% elif param.type == 'slider' %}
+        <div class="flex items-center space-x-3">
+            <input type="range"
+                   name="{{ param.name }}"
+                   value="{{ param.value }}"
+                   min="{{ param.min|default:0 }}"
+                   max="{{ param.max|default:100 }}"
+                   step="{{ param.step|default:1 }}"
+                   class="param-input w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                   data-cell-id="{{ cell.id }}"
+                   data-param-name="{{ param.name }}"
+                   oninput="this.nextElementSibling.textContent = this.value">
+            <span class="text-sm text-gray-600 w-12">{{ param.value }}</span>
+        </div>
+
+        {% else %}
+        <input type="text"
+               name="{{ param.name }}"
+               value="{{ param.value }}"
+               class="param-input w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+               data-cell-id="{{ cell.id }}"
+               data-param-name="{{ param.name }}">
+        {% endif %}
+    </div>
+    {% endfor %}
+</div>

@@ -1,0 +1,76 @@
+{% extends "notebook/base.html" %}
+
+{% block title %}Execution History - {{ notebook.name }}{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">Execution History</h1>
+            <p class="mt-1 text-gray-600">{{ notebook.name }}</p>
+        </div>
+        <a href="{% url 'notebook:detail' notebook.slug %}"
+           class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors">
+            Back to Notebook
+        </a>
+    </div>
+</div>
+
+{% if executions %}
+<div class="bg-white rounded-lg shadow overflow-hidden">
+    <table class="min-w-full divide-y divide-gray-200">
+        <thead class="bg-gray-50">
+            <tr>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cell</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Parameters</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Executed</th>
+            </tr>
+        </thead>
+        <tbody class="bg-white divide-y divide-gray-200">
+            {% for execution in executions %}
+            <tr class="hover:bg-gray-50">
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <div class="text-sm font-medium text-gray-900">
+                        {{ execution.cell.title|default:"Untitled" }}
+                    </div>
+                    <div class="text-sm text-gray-500">Cell #{{ execution.cell.order|add:1 }}</div>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                        {% if execution.status == 'success' %}bg-green-100 text-green-800
+                        {% elif execution.status == 'error' %}bg-red-100 text-red-800
+                        {% elif execution.status == 'running' %}bg-yellow-100 text-yellow-800
+                        {% else %}bg-gray-100 text-gray-800{% endif %}">
+                        {{ execution.status }}
+                    </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {% if execution.execution_time %}
+                    {{ execution.execution_time|floatformat:2 }}s
+                    {% else %}
+                    -
+                    {% endif %}
+                </td>
+                <td class="px-6 py-4 text-sm text-gray-500 max-w-xs truncate">
+                    {% if execution.parameters %}
+                    <code class="text-xs">{{ execution.parameters }}</code>
+                    {% else %}
+                    <span class="text-gray-400">None</span>
+                    {% endif %}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {{ execution.created_at|timesince }} ago
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<div class="bg-white rounded-lg shadow-md p-8 text-center">
+    <p class="text-gray-600">No execution history available.</p>
+</div>
+{% endif %}
+{% endblock %}

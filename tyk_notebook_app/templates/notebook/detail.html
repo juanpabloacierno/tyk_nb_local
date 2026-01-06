@@ -1,0 +1,324 @@
+{% extends "notebook/base.html" %}
+
+{% block title %}{{ notebook.name }} - TyK Notebook{% endblock %}
+
+{% block nav_extra %}
+<button onclick="resetSession()" class="text-gray-600 hover:text-red-600 text-sm">
+    Reset Session
+</button>
+{% endblock %}
+
+{% block content %}
+<div class="mb-6">
+    <div class="flex items-center justify-between">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-900">{{ notebook.name }}</h1>
+            {% if notebook.description %}
+            <p class="mt-1 text-gray-600">{{ notebook.description }}</p>
+            {% endif %}
+        </div>
+        <div class="flex space-x-3">
+            <button onclick="runSetup()" id="setup-btn"
+                    class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md transition-colors flex items-center">
+                <span id="setup-spinner" class="loading-spinner mr-2 hidden"></span>
+                <span id="setup-text">Initialize Notebook</span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- Setup status banner -->
+<div id="setup-banner" class="mb-6 p-4 rounded-lg {% if setup_complete %}bg-green-100 text-green-800{% else %}bg-yellow-100 text-yellow-800{% endif %}">
+    {% if setup_complete %}
+    <span class="font-medium">Notebook initialized.</span> You can now run cells.
+    {% else %}
+    <span class="font-medium">Notebook not initialized.</span> Click "Initialize Notebook" to set up the environment before running cells.
+    {% endif %}
+</div>
+
+<!-- Cells -->
+<div class="space-y-6" id="cells-container">
+    {% for item in cells_data %}
+    <div class="cell-container bg-white rounded-lg shadow-md overflow-hidden" data-cell-id="{{ item.cell.id }}">
+        <!-- Cell Header -->
+        <div class="bg-gray-50 border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center">
+                <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2.5 py-0.5 rounded mr-3">
+                    {{ item.cell.order|add:1 }}
+                </span>
+                <h3 class="font-semibold text-gray-900">
+                    {{ item.cell.title|default:"Untitled Cell" }}
+                </h3>
+                {% if item.cell.auto_run %}
+                <span class="ml-2 bg-purple-100 text-purple-800 text-xs px-2 py-0.5 rounded">auto-run</span>
+                {% endif %}
+            </div>
+            <button onclick="runCell({{ item.cell.id }})"
+                    class="run-btn bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-sm transition-colors flex items-center"
+                    data-cell-id="{{ item.cell.id }}">
+                <span class="cell-spinner loading-spinner mr-2 hidden"></span>
+                <span class="btn-text">Run</span>
+            </button>
+        </div>
+
+        <!-- Cell Description (Markdown) -->
+        {% if item.cell.description %}
+        <div class="px-4 py-3 bg-gray-50 border-b border-gray-200 prose prose-sm max-w-none markdown-content">
+            {{ item.cell.description|safe }}
+        </div>
+        {% endif %}
+
+        <!-- Parameters Form -->
+        {% if item.has_params %}
+        <div class="px-4 py-4 bg-white border-b border-gray-200">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {% for param in item.parameters %}
+                <div class="param-group">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">
+                        {{ param.name }}
+                    </label>
+
+                    {% if param.type == 'dropdown' %}
+                    <select name="{{ param.name }}"
+                            class="param-input w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                            data-cell-id="{{ item.cell.id }}"
+                            data-param-name="{{ param.name }}"
+                            {% if item.cell.auto_run %}onchange="runCell({{ item.cell.id }})"{% endif %}>
+                        {% for option in param.options %}
+                        <option value="{{ option }}" {% if option == param.value %}selected{% endif %}>
+                            {{ option }}
+                        </option>
+                        {% endfor %}
+                    </select>
+
+                    {% elif param.type == 'number' %}
+                    <input type="number"
+                           name="{{ param.name }}"
+                           value="{{ param.value }}"
+                           {% if param.min is not None %}min="{{ param.min }}"{% endif %}
+                           {% if param.max is not None %}max="{{ param.max }}"{% endif %}
+                           {% if param.step is not None %}step="{{ param.step }}"{% endif %}
+                           class="param-input w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                           data-cell-id="{{ item.cell.id }}"
+                           data-param-name="{{ param.name }}">
+
+                    {% elif param.type == 'boolean' %}
+                    <input type="checkbox"
+                           name="{{ param.name }}"
+                           {% if param.value %}checked{% endif %}
+                           class="param-input h-4 w-4 text-blue-600 border-gray-300 rounded"
+                           data-cell-id="{{ item.cell.id }}"
+                           data-param-name="{{ param.name }}"
+                           {% if item.cell.auto_run %}onchange="runCell({{ item.cell.id }})"{% endif %}>
+
+                    {% elif param.type == 'slider' %}
+                    <div class="flex items-center space-x-3">
+                        <input type="range"
+                               name="{{ param.name }}"
+                               value="{{ param.value }}"
+                               min="{{ param.min|default:0 }}"
+                               max="{{ param.max|default:100 }}"
+                               step="{{ param.step|default:1 }}"
+                               class="param-input w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                               data-cell-id="{{ item.cell.id }}"
+                               data-param-name="{{ param.name }}"
+                               oninput="this.nextElementSibling.textContent = this.value">
+                        <span class="text-sm text-gray-600 w-12">{{ param.value }}</span>
+                    </div>
+
+                    {% else %}
+                    <input type="text"
+                           name="{{ param.name }}"
+                           value="{{ param.value }}"
+                           class="param-input w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
+                           data-cell-id="{{ item.cell.id }}"
+                           data-param-name="{{ param.name }}">
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Code (collapsible) -->
+        <details class="border-b border-gray-200">
+            <summary class="px-4 py-2 bg-gray-50 cursor-pointer text-sm text-gray-600 hover:bg-gray-100">
+                View Code
+            </summary>
+            <div class="p-4 bg-gray-900">
+                <pre class="code-block text-sm"><code class="language-python">{{ item.cell.source_code }}</code></pre>
+            </div>
+        </details>
+
+        <!-- Output Area -->
+        <div class="output-area hidden" id="output-{{ item.cell.id }}">
+            <div class="px-4 py-2 bg-gray-100 border-b border-gray-200 flex items-center justify-between">
+                <span class="text-sm font-medium text-gray-700">Output</span>
+                <span class="execution-time text-xs text-gray-500"></span>
+            </div>
+            <div class="output-container p-4">
+                <div class="output-text text-sm font-mono whitespace-pre-wrap"></div>
+                <div class="output-html mt-4"></div>
+                <div class="output-error text-red-600 text-sm font-mono whitespace-pre-wrap hidden"></div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const notebookSlug = '{{ notebook.slug }}';
+
+// Run setup cells
+async function runSetup() {
+    const btn = document.getElementById('setup-btn');
+    const spinner = document.getElementById('setup-spinner');
+    const text = document.getElementById('setup-text');
+    const banner = document.getElementById('setup-banner');
+
+    btn.disabled = true;
+    spinner.classList.remove('hidden');
+    text.textContent = 'Initializing...';
+
+    try {
+        const response = await fetch(`/notebook/${notebookSlug}/setup/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken,
+                'Content-Type': 'application/json',
+            },
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            banner.className = 'mb-6 p-4 rounded-lg bg-green-100 text-green-800';
+            banner.innerHTML = '<span class="font-medium">Notebook initialized.</span> You can now run cells.';
+            text.textContent = 'Initialized';
+            btn.className = btn.className.replace('bg-green-600 hover:bg-green-700', 'bg-gray-400');
+        } else {
+            banner.className = 'mb-6 p-4 rounded-lg bg-red-100 text-red-800';
+            banner.innerHTML = `<span class="font-medium">Initialization failed.</span> ${data.errors.join('; ')}`;
+            text.textContent = 'Retry';
+            btn.disabled = false;
+        }
+    } catch (error) {
+        banner.className = 'mb-6 p-4 rounded-lg bg-red-100 text-red-800';
+        banner.innerHTML = `<span class="font-medium">Error:</span> ${error.message}`;
+        text.textContent = 'Retry';
+        btn.disabled = false;
+    }
+
+    spinner.classList.add('hidden');
+}
+
+// Run a single cell
+async function runCell(cellId) {
+    const cellContainer = document.querySelector(`[data-cell-id="${cellId}"]`);
+    const btn = cellContainer.querySelector('.run-btn');
+    const spinner = cellContainer.querySelector('.cell-spinner');
+    const btnText = cellContainer.querySelector('.btn-text');
+    const outputArea = document.getElementById(`output-${cellId}`);
+
+    // Gather parameters
+    const params = {};
+    cellContainer.querySelectorAll('.param-input').forEach(input => {
+        const name = input.dataset.paramName;
+        if (input.type === 'checkbox') {
+            params[name] = input.checked;
+        } else if (input.type === 'number' || input.type === 'range') {
+            params[name] = parseFloat(input.value);
+        } else {
+            params[name] = input.value;
+        }
+    });
+
+    // Show loading state
+    btn.disabled = true;
+    spinner.classList.remove('hidden');
+    btnText.textContent = 'Running...';
+
+    try {
+        const response = await fetch(`/cell/${cellId}/run/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ parameters: params }),
+        });
+
+        const data = await response.json();
+
+        // Show output area
+        outputArea.classList.remove('hidden');
+
+        const outputText = outputArea.querySelector('.output-text');
+        const outputHtml = outputArea.querySelector('.output-html');
+        const outputError = outputArea.querySelector('.output-error');
+        const execTime = outputArea.querySelector('.execution-time');
+
+        // Clear previous output
+        outputText.textContent = '';
+        outputHtml.innerHTML = '';
+        outputError.classList.add('hidden');
+
+        if (data.success) {
+            if (data.output_text) {
+                outputText.textContent = data.output_text;
+            }
+            if (data.output_html) {
+                outputHtml.innerHTML = data.output_html;
+            }
+            execTime.textContent = `${data.execution_time.toFixed(2)}s`;
+        } else {
+            outputError.classList.remove('hidden');
+            outputError.textContent = data.error;
+        }
+
+    } catch (error) {
+        outputArea.classList.remove('hidden');
+        outputArea.querySelector('.output-error').classList.remove('hidden');
+        outputArea.querySelector('.output-error').textContent = error.message;
+    }
+
+    // Reset button
+    btn.disabled = false;
+    spinner.classList.add('hidden');
+    btnText.textContent = 'Run';
+}
+
+// Reset session
+async function resetSession() {
+    if (!confirm('Reset the notebook session? This will clear all execution state.')) {
+        return;
+    }
+
+    try {
+        await fetch(`/notebook/${notebookSlug}/reset/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken,
+            },
+        });
+        window.location.reload();
+    } catch (error) {
+        alert('Failed to reset session: ' + error.message);
+    }
+}
+
+// Initialize markdown rendering
+document.addEventListener('DOMContentLoaded', function() {
+    document.querySelectorAll('.markdown-content').forEach(el => {
+        el.innerHTML = marked.parse(el.textContent);
+    });
+
+    // Highlight code blocks
+    document.querySelectorAll('pre code').forEach((block) => {
+        hljs.highlightElement(block);
+    });
+});
+</script>
+{% endblock %}
