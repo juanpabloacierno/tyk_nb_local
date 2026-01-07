@@ -1,0 +1,141 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls %}
+
+{% block content %}
+<div id="content-main">
+    <h1>Import Notebook</h1>
+
+    <p>Upload a Python script (.py) or Jupyter notebook (.ipynb) file to import it into the system.</p>
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <fieldset class="module aligned">
+            <h2>Notebook File</h2>
+
+            <div class="form-row">
+                <div>
+                    <label for="id_notebook_file" class="required">{{ form.notebook_file.label }}:</label>
+                    {{ form.notebook_file }}
+                    {% if form.notebook_file.help_text %}
+                        <p class="help">{{ form.notebook_file.help_text }}</p>
+                    {% endif %}
+                    {% if form.notebook_file.errors %}
+                        <ul class="errorlist">
+                            {% for error in form.notebook_file.errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% endif %}
+                </div>
+            </div>
+        </fieldset>
+
+        <fieldset class="module aligned">
+            <h2>Notebook Details (Optional)</h2>
+
+            <div class="form-row">
+                <div>
+                    <label for="id_name">{{ form.name.label }}:</label>
+                    {{ form.name }}
+                    {% if form.name.help_text %}
+                        <p class="help">{{ form.name.help_text }}</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="form-row">
+                <div>
+                    <label for="id_description">{{ form.description.label }}:</label>
+                    {{ form.description }}
+                    {% if form.description.help_text %}
+                        <p class="help">{{ form.description.help_text }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </fieldset>
+
+        <fieldset class="module aligned">
+            <h2>Import Options</h2>
+
+            <div class="form-row">
+                <div class="checkbox-row">
+                    {{ form.replace_existing }}
+                    <label for="id_replace_existing" class="vCheckboxLabel">{{ form.replace_existing.label }}</label>
+                    {% if form.replace_existing.help_text %}
+                        <p class="help">{{ form.replace_existing.help_text }}</p>
+                    {% endif %}
+                </div>
+            </div>
+        </fieldset>
+
+        <div class="submit-row">
+            <input type="submit" value="Import Notebook" class="default">
+            <a href="{% url 'admin:tyk_notebook_app_notebook_changelist' %}" class="button cancel-link">Cancel</a>
+        </div>
+    </form>
+</div>
+
+<style>
+    .form-row {
+        padding: 10px;
+        border-bottom: 1px solid #eee;
+    }
+    .form-row label {
+        display: block;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+    .form-row input[type="text"],
+    .form-row textarea {
+        width: 100%;
+        max-width: 500px;
+        padding: 8px;
+    }
+    .form-row textarea {
+        min-height: 80px;
+    }
+    .form-row .help {
+        color: #666;
+        font-size: 11px;
+        margin-top: 5px;
+    }
+    .checkbox-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .checkbox-row .help {
+        margin-left: 25px;
+    }
+    .submit-row {
+        padding: 12px 14px;
+        margin: 20px 0 0 0;
+        background: #f8f8f8;
+        border-top: 1px solid #ccc;
+    }
+    .submit-row input[type="submit"] {
+        margin-right: 10px;
+    }
+    .cancel-link {
+        padding: 10px 15px;
+        background: #999;
+        color: white;
+        text-decoration: none;
+        border-radius: 4px;
+    }
+    .cancel-link:hover {
+        background: #777;
+    }
+    fieldset.module h2 {
+        background: #79aec8;
+        color: white;
+        padding: 8px 12px;
+        margin: 0;
+    }
+    fieldset.module {
+        border: 1px solid #ccc;
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}

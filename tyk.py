@@ -1371,9 +1371,12 @@ class TyK:
             """
 
         # JS: carga vis-network + click -> muestra resumen
-        nodes_json = json.dumps(nodes, ensure_ascii=False)
-        edges_json = json.dumps(edges, ensure_ascii=False)
-        summaries_json = json.dumps(summaries_map or {}, ensure_ascii=False)
+        # Escape </script> tags to prevent breaking HTML
+        def _safe_json(obj):
+            return json.dumps(obj, ensure_ascii=False).replace('</script>', '<\\/script>').replace('</Script>', '<\\/Script>')
+        nodes_json = _safe_json(nodes)
+        edges_json = _safe_json(edges)
+        summaries_json = _safe_json(summaries_map or {})
 
         tooltip_html = f"""
         <div id="{div_id}_tip"
@@ -1412,8 +1415,8 @@ class TyK:
             var tip       = document.getElementById("{div_id}_tip");
 
             var data = {{
-              nodes: new vis.DataSet({json.dumps(nodes)}),
-              edges: new vis.DataSet({json.dumps(edges)})
+              nodes: new vis.DataSet({nodes_json}),
+              edges: new vis.DataSet({edges_json})
             }};
             var options   = {options_json};
             var network   = new vis.Network(container, data, options);

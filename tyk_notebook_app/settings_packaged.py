@@ -1,28 +1,23 @@
 """
-Django settings for TyK Notebook Application.
-Supports both development and packaged (PyInstaller) modes.
+Django settings for packaged TyK Notebook Application.
 """
 import os
 import sys
 from pathlib import Path
 
-# Handle frozen application (PyInstaller)
+# Handle frozen application
 if getattr(sys, 'frozen', False):
-    # Running as compiled executable
     BASE_DIR = Path(sys._MEIPASS) / "tyk_notebook_app"
     RUNTIME_DIR = Path(os.path.dirname(sys.executable))
-    # Data directory for database and user files (writable location)
-    DATA_DIR = Path(os.environ.get("TYK_DB_PATH", RUNTIME_DIR / "tyk_data"))
-    DATA_DIR.mkdir(parents=True, exist_ok=True)
 else:
-    # Running as script (development mode)
     BASE_DIR = Path(__file__).resolve().parent
     RUNTIME_DIR = BASE_DIR.parent
-    DATA_DIR = BASE_DIR  # In dev mode, use app directory
 
-PROJECT_ROOT = RUNTIME_DIR
+# Data directory (writable location)
+DATA_DIR = Path(os.environ.get("TYK_DB_PATH", RUNTIME_DIR / "tyk_data"))
+DATA_DIR.mkdir(parents=True, exist_ok=True)
 
-SECRET_KEY = 'tyk-notebook-dev-key-change-in-production-' + os.urandom(16).hex()
+SECRET_KEY = 'tyk-notebook-standalone-key-change-in-production'
 
 DEBUG = True
 
@@ -81,9 +76,8 @@ USE_I18N = True
 USE_TZ = True
 
 STATIC_URL = 'static/'
-STATICFILES_DIRS = [BASE_DIR / 'static'] if (BASE_DIR / 'static').exists() else []
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # TyK specific settings
-TYK_DATA_PATH = os.environ.get('TYK_DATA_PATH', str(PROJECT_ROOT))
+TYK_DATA_PATH = os.environ.get('TYK_DATA_PATH', str(RUNTIME_DIR))

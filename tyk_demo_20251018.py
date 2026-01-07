@@ -21,14 +21,7 @@ Luego, iniciaremos el entorno y sus datos **estarán listos para navegar**.
 ## **Conectando con sus datos**
 """
 
-# @title Estableciendo conexión...
-from google.colab import drive
-drive.mount('/content/drive/')
 
-import os
-print(os.listdir("/content/drive/MyDrive/Consultorías/TyK/Demos/Notebook"))
-
-"""## **Iniciar el entorno**"""
 
 # @title Inicializando...
 !pip install pyvis
@@ -61,13 +54,9 @@ import webbrowser
 import json, re, io
 import pandas as pd
 
+PATH= "data/HVOA/"
 
 from tyk import TyK
-
-### outside class, set dataset
-DATASET = "UNRN" # @param ["UNRN","HV","Ecuador","Niembro3"]
-PATH = f"/content/drive/MyDrive/Consultorías/TyK/Demos/Notebook/{DATASET}/"
-
 
 tyk = TyK(
     path_base=PATH,

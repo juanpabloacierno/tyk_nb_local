@@ -4,7 +4,16 @@
       "Bash(curl:*)",
       "Bash(pkill:*)",
       "Bash(rm:*)",
-      "Bash(python3:*)"
+      "Bash(python3:*)",
+      "Bash(python manage.py runserver:*)",
+      "Bash(python tyk_notebook_app/launcher.py:*)",
+      "Bash(lsof:*)",
+      "Bash(xargs kill:*)",
+      "Bash(fuser:*)",
+      "Bash(cat:*)",
+      "Bash(__NEW_LINE__ echo -e \"\\\\n\\\\nTest 2: Pandas DataFrame\")",
+      "Bash(__NEW_LINE__ echo -e \"\\\\n\\\\nTest 3: IPython.core.display import\")",
+      "Bash(source venv/bin/activate)"
     ]
   }
 }

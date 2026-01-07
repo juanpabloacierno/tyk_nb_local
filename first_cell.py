@@ -25,7 +25,7 @@ import pandas as pd
 from tyk import TyK
 
 
-PATH= "/data/HVOA/"
+PATH= "data/HVOA/"
 
 tyk = TyK(
     path_base=PATH, #ESTO ES LO UNICO QUE HAY QUE MODIFICAR
