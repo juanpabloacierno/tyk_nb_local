@@ -53,12 +53,16 @@ def import_notebook(filepath: str, name: Optional[str] = None,
 
     # Create cells and parameters
     for order, parsed_cell in enumerate(parsed_cells):
-        # Determine if this cell is executable (has parameters or is not just setup)
-        is_executable = bool(parsed_cell.parameters) or not parsed_cell.is_setup_cell
+        # Determine if this cell is executable
+        # Markdown cells are never executable
+        if parsed_cell.cell_type == 'markdown':
+            is_executable = False
+        else:
+            is_executable = bool(parsed_cell.parameters) or not parsed_cell.is_setup_cell
 
         cell = Cell.objects.create(
             notebook=notebook,
-            order=order,
+            order=order * 5,  # helps to insert some in-between elements if needed
             title=parsed_cell.title,
             cell_type=parsed_cell.cell_type,
             source_code=parsed_cell.source_code,

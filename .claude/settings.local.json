@@ -13,7 +13,10 @@
       "Bash(cat:*)",
       "Bash(__NEW_LINE__ echo -e \"\\\\n\\\\nTest 2: Pandas DataFrame\")",
       "Bash(__NEW_LINE__ echo -e \"\\\\n\\\\nTest 3: IPython.core.display import\")",
-      "Bash(source venv/bin/activate)"
+      "Bash(source venv/bin/activate)",
+      "Bash(ls:*)",
+      "Bash(source .venv/bin/activate)",
+      "Bash(python:*)"
     ]
   }
 }

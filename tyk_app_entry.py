@@ -111,39 +111,50 @@ def main():
     parser = argparse.ArgumentParser(description="TyK Notebook Application")
     parser.add_argument("--port", type=int, default=8000, help="Port to run on")
     parser.add_argument("--no-browser", action="store_true", help="Don't open browser")
+    parser.add_argument("--no-reload", action="store_true", help="Disable auto-reload")
     args = parser.parse_args()
 
-    print("=" * 50)
-    print("  TyK Notebook Application")
-    print("=" * 50)
-    print()
+    # Check if we're in the reloader child process
+    is_reloader_child = os.environ.get('RUN_MAIN') == 'true'
 
-    # Setup
-    ensure_data_dir()
-    setup_django()
-    run_migrations()
-    create_admin_user()
-    import_notebooks()
+    # Only run setup in parent process (or if reloader disabled)
+    if not is_reloader_child:
+        print("=" * 50)
+        print("  TyK Notebook Application")
+        print("=" * 50)
+        print()
 
-    # Start browser thread
-    if not args.no_browser:
-        browser_thread = threading.Thread(target=open_browser, args=(args.port,))
-        browser_thread.daemon = True
-        browser_thread.start()
+        # Setup
+        ensure_data_dir()
+        setup_django()
+        run_migrations()
+        create_admin_user()
+        import_notebooks()
 
-    print()
-    print("=" * 50)
-    print(f"  Server: http://localhost:{args.port}/")
-    print(f"  Admin:  http://localhost:{args.port}/admin/")
-    print("  Login:  admin / admin")
-    print("=" * 50)
-    print()
-    print("Press Ctrl+C to stop the server")
-    print()
+        # Start browser thread
+        if not args.no_browser:
+            browser_thread = threading.Thread(target=open_browser, args=(args.port,))
+            browser_thread.daemon = True
+            browser_thread.start()
 
-    # Run server
+        print()
+        print("=" * 50)
+        print(f"  Server: http://localhost:{args.port}/")
+        print(f"  Admin:  http://localhost:{args.port}/admin/")
+        print("  Login:  admin / admin")
+        if not args.no_reload:
+            print("  Auto-reload: enabled")
+        print("=" * 50)
+        print()
+        print("Press Ctrl+C to stop the server")
+        print()
+    else:
+        # Child process needs Django setup
+        setup_django()
+
+    # Run server with auto-reload enabled by default
     from django.core.management import call_command
-    call_command("runserver", f"0.0.0.0:{args.port}", use_reloader=False)
+    call_command("runserver", f"0.0.0.0:{args.port}", use_reloader=not args.no_reload)
 
 
 if __name__ == "__main__":

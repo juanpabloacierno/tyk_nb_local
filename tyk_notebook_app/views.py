@@ -9,6 +9,7 @@ from django.http import JsonResponse, HttpResponse
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 from django.conf import settings
+from django.db.models import Q
 
 from .models import Notebook, Cell, Parameter, Execution, NotebookSession
 from .executor import session_manager
@@ -35,8 +36,10 @@ def notebook_detail(request, slug):
         notebook=notebook, session_key=session_key, defaults={"parameter_values": {}}
     )
 
-    # Get cells with their parameters
-    cells = notebook.cells.filter(is_executable=True).prefetch_related("parameters")
+    # Get cells with their parameters (executable cells + markdown cells)
+    cells = notebook.cells.filter(
+        Q(is_executable=True) | Q(cell_type='markdown')
+    ).prefetch_related("parameters")
 
     # Build cell data with current parameter values
     cells_data = []

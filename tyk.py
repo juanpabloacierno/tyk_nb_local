@@ -33,7 +33,7 @@ class TyK:
         self,
         path_base: str,
         dat_folder: Optional[str] = None,
-        json_bcclusters="jsonfiles/BCclusters.json",
+        json_bcclusters=None,
         tex_top_clusters=None,
         tex_sub_clusters=None,
         gdf_clusters=None,
@@ -42,10 +42,17 @@ class TyK:
         #tex_sub_clusters="texfiles/subtop_clusters.tex",
         #gdf_clusters="gdffiles/BCclusters.gdf",
 
-        json_cooc="freqs/coocnetworks.json",
+        json_cooc=None,
     ):
         # Rutas absolutas / auto-detect con patrones
-        self.path_base = path_base
+        # Convert path_base to absolute path if relative
+        self.path_base = os.path.abspath(path_base)
+        # Use full path with path_base for json_bcclusters
+        if json_bcclusters is None:
+            json_bcclusters = os.path.join(self.path_base, "jsonfiles/BCclusters.json")
+        # Use full path with path_base for json_cooc
+        if json_cooc is None:
+            json_cooc = os.path.join(self.path_base, "freqs/coocnetworks.json")
         self.json_bcclusters = self._resolve_path(
             json_bcclusters, default_dir="jsonfiles",
             patterns=["*BCclusters*.json"], preferred_basename="BCclusters.json"
@@ -67,7 +74,7 @@ class TyK:
             patterns=["*coocnetworks*.json"], preferred_basename="coocnetworks.json"
         )
 
-        self.dat_folder = os.path.join(path_base, dat_folder) if dat_folder else None
+        self.dat_folder = os.path.join(self.path_base, dat_folder) if dat_folder else None
 
 
         # Estructuras en memoria
@@ -127,8 +134,8 @@ class TyK:
         self._load_gdf_clusters()
         self._index_subclusters_by_top()   # Relacionar subclusters con su top
         self._ensure_graph_from_json()
-        self.countries_global_df = self._read_freq_dat(f"{path_base}freqs/freq_countries.dat")  # precalcula distribución global
-        self.load_cluster_summaries(f"{path_base}clusters") #, filename="extended_bulleted_mcp.txt"
+        self.countries_global_df = self._read_freq_dat(os.path.join(self.path_base, "freqs/freq_countries.dat"))  # precalcula distribución global
+        self.load_cluster_summaries(os.path.join(self.path_base, "clusters")) #, filename="extended_bulleted_mcp.txt"
 
 
     # ------------------------ CARGA / PARSE ------------------------

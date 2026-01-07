@@ -3,6 +3,9 @@
 {% block title %}{{ notebook.name }} - TyK Notebook{% endblock %}
 
 {% block nav_extra %}
+<a href="{% url 'notebook:history' notebook.slug %}" class="text-gray-600 hover:text-blue-600 text-sm mr-4" target="_blank">
+    Execution Log
+</a>
 <button onclick="resetSession()" class="text-gray-600 hover:text-red-600 text-sm">
     Reset Session
 </button>
@@ -39,6 +42,15 @@
 <!-- Cells -->
 <div class="space-y-6" id="cells-container">
     {% for item in cells_data %}
+    {% if item.cell.cell_type == 'markdown' %}
+    <!-- Markdown Cell -->
+    <div class="cell-container bg-white rounded-lg shadow-md overflow-hidden" data-cell-id="{{ item.cell.id }}">
+        <div class="px-6 py-4 prose prose-sm max-w-none markdown-content">
+            {{ item.cell.source_code }}
+        </div>
+    </div>
+    {% else %}
+    <!-- Code Cell -->
     <div class="cell-container bg-white rounded-lg shadow-md overflow-hidden" data-cell-id="{{ item.cell.id }}">
         <!-- Cell Header -->
         <div class="bg-gray-50 border-b border-gray-200 px-4 py-3 flex items-center justify-between">
@@ -83,7 +95,7 @@
                             class="param-input w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
                             data-cell-id="{{ item.cell.id }}"
                             data-param-name="{{ param.name }}"
-                            {% if item.cell.auto_run %}onchange="runCell({{ item.cell.id }})"{% endif %}>
+                            onchange="runCell({{ item.cell.id }})">
                         {% for option in param.options %}
                         <option value="{{ option }}" {% if option == param.value %}selected{% endif %}>
                             {{ option }}
@@ -140,15 +152,6 @@
         </div>
         {% endif %}
 
-        <!-- Code (collapsible) -->
-        <details class="border-b border-gray-200">
-            <summary class="px-4 py-2 bg-gray-50 cursor-pointer text-sm text-gray-600 hover:bg-gray-100">
-                View Code
-            </summary>
-            <div class="p-4 bg-gray-900">
-                <pre class="code-block text-sm"><code class="language-python">{{ item.cell.source_code }}</code></pre>
-            </div>
-        </details>
 
         <!-- Output Area -->
         <div class="output-area hidden" id="output-{{ item.cell.id }}">
@@ -162,7 +165,20 @@
                 <div class="output-error text-red-600 text-sm font-mono whitespace-pre-wrap hidden"></div>
             </div>
         </div>
+
+        <!-- Code (collapsible) -->
+        <details class="border-b border-gray-200">
+            <hr>
+            <summary class="px-4 py-2 bg-gray-50 cursor-pointer text-sm text-gray-600 hover:bg-gray-100">
+                View Code
+            </summary>
+            <div class="p-4 bg-gray-900">
+                <pre class="code-block text-sm"><code class="language-python">{{ item.cell.source_code }}</code></pre>
+            </div>
+        </details>
+
     </div>
+    {% endif %}
     {% endfor %}
 </div>
 {% endblock %}

@@ -49,8 +49,11 @@ class ColabNotebookParser:
     """
 
     # Regex patterns
+    # Matches: # @title Title Text {"run":"auto"}
+    # Group 1: Title text (optional, anything not starting with {)
+    # Group 2: Options JSON content (optional)
     TITLE_PATTERN = re.compile(
-        r'#\s*@title\s+(.+?)(?:\s*\{(.+?)\})?\s*$',
+        r'#\s*@title\s*(?:([^{\n]+?)\s*)?(?:\{(.+?)\})?\s*$',
         re.MULTILINE
     )
 
@@ -90,7 +93,29 @@ class ColabNotebookParser:
         current_cell = ParsedCell()
         in_markdown = False
         markdown_content = []
-        pending_description = ""
+
+        def save_current_cell():
+            """Helper to save current code cell if it has content"""
+            nonlocal current_cell, current_cell_lines
+            if current_cell_lines or current_cell.title:
+                current_cell.source_code = '\n'.join(current_cell_lines)
+                if current_cell.source_code.strip() or current_cell.title:
+                    self.cells.append(current_cell)
+            current_cell = ParsedCell()
+            current_cell_lines = []
+
+        def create_markdown_cell(md_text: str):
+            """Helper to create a markdown cell"""
+            if md_text.strip():
+                md_cell = ParsedCell()
+                md_cell.cell_type = 'markdown'
+                md_cell.source_code = md_text
+                md_cell.is_executable = False
+                # Extract title from first line if it's a heading
+                first_line = md_text.strip().split('\n')[0]
+                if first_line.startswith('#'):
+                    md_cell.title = first_line.lstrip('#').strip()
+                self.cells.append(md_cell)
 
         i = 0
         while i < len(lines):
@@ -98,12 +123,15 @@ class ColabNotebookParser:
 
             # Check for markdown block start
             if line.strip().startswith('"""') and not in_markdown:
+                # Save any accumulated code first
+                save_current_cell()
+
                 in_markdown = True
                 markdown_content = []
                 # Check if it's a single-line markdown
                 if line.strip().endswith('"""') and len(line.strip()) > 6:
                     md_text = line.strip()[3:-3]
-                    pending_description = md_text
+                    create_markdown_cell(md_text)
                     in_markdown = False
                 else:
                     md_start = line.strip()[3:]
@@ -118,7 +146,7 @@ class ColabNotebookParser:
                     md_end = line.strip()[:-3]
                     if md_end:
                         markdown_content.append(md_end)
-                    pending_description = '\n'.join(markdown_content)
+                    create_markdown_cell('\n'.join(markdown_content))
                     in_markdown = False
                 else:
                     markdown_content.append(line)
@@ -129,16 +157,10 @@ class ColabNotebookParser:
             title_match = self.TITLE_PATTERN.search(line)
             if title_match:
                 # Save previous cell if exists
-                if current_cell_lines or current_cell.title:
-                    current_cell.source_code = '\n'.join(current_cell_lines)
-                    if current_cell.source_code.strip() or current_cell.title:
-                        self.cells.append(current_cell)
+                save_current_cell()
 
-                # Start new cell
-                current_cell = ParsedCell()
-                current_cell.title = title_match.group(1).strip()
-                current_cell.description = pending_description
-                pending_description = ""
+                # Start new cell with title (group 1 may be None)
+                current_cell.title = (title_match.group(1) or "").strip()
 
                 # Parse title options
                 if title_match.group(2):
@@ -148,7 +170,6 @@ class ColabNotebookParser:
                     except json.JSONDecodeError:
                         pass
 
-                current_cell_lines = []
                 i += 1
                 continue
 
@@ -164,10 +185,7 @@ class ColabNotebookParser:
             i += 1
 
         # Don't forget the last cell
-        if current_cell_lines or current_cell.title:
-            current_cell.source_code = '\n'.join(current_cell_lines)
-            if current_cell.source_code.strip() or current_cell.title:
-                self.cells.append(current_cell)
+        save_current_cell()
 
         # Mark setup cells
         self._identify_setup_cells()
@@ -180,20 +198,25 @@ class ColabNotebookParser:
             nb = json.load(f)
 
         self.cells = []
-        pending_description = ""
 
         for nb_cell in nb.get('cells', []):
             cell_type = nb_cell.get('cell_type', 'code')
             source = ''.join(nb_cell.get('source', []))
 
             if cell_type == 'markdown':
-                pending_description = source
-                continue
+                # Create a markdown cell
+                md_cell = ParsedCell()
+                md_cell.cell_type = 'markdown'
+                md_cell.source_code = source
+                md_cell.is_executable = False
+                # Extract title from first line if it's a heading
+                lines = source.strip().split('\n')
+                if lines and lines[0].startswith('#'):
+                    md_cell.title = lines[0].lstrip('#').strip()
+                self.cells.append(md_cell)
 
-            if cell_type == 'code':
+            elif cell_type == 'code':
                 parsed = self._parse_code_cell(source)
-                parsed.description = pending_description
-                pending_description = ""
                 self.cells.append(parsed)
 
         self._identify_setup_cells()
@@ -207,7 +230,7 @@ class ColabNotebookParser:
         # Extract title
         title_match = self.TITLE_PATTERN.search(source)
         if title_match:
-            cell.title = title_match.group(1).strip()
+            cell.title = (title_match.group(1) or "").strip()
             if title_match.group(2):
                 try:
                     opts = json.loads('{' + title_match.group(2) + '}')
