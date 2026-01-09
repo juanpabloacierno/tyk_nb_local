@@ -16,6 +16,9 @@ networkx>=3.2
 # Country data
 pycountry>=22.0
 
+# Markdown rendering
+markdown>=3.5
+
 # Debugging tools
 web-pdb>=1.5.0
 

@@ -4,6 +4,7 @@ Handles notebook display and cell execution.
 """
 import json
 import os
+import markdown
 from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.http import require_http_methods
@@ -64,11 +65,20 @@ def notebook_detail(request, slug):
                 }
             )
 
+        # Convert description markdown to HTML
+        description_html = ""
+        if cell.description:
+            description_html = markdown.markdown(
+                cell.description,
+                extensions=['fenced_code', 'tables', 'nl2br']
+            )
+
         cells_data.append(
             {
                 "cell": cell,
                 "parameters": params_data,
                 "has_params": len(params_data) > 0,
+                "description_html": description_html,
             }
         )
 

@@ -96,9 +96,9 @@ trace_log()          # Show all traces</code></pre>
         </div>
 
         <!-- Cell Description (Markdown) -->
-        {% if item.cell.description %}
+        {% if item.description_html %}
         <div class="px-4 py-3 bg-gray-50 border-b border-gray-200 prose prose-sm max-w-none markdown-content">
-            {{ item.cell.description|safe }}
+            {{ item.description_html|safe }}
         </div>
         {% endif %}
 

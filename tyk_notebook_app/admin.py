@@ -38,6 +38,7 @@ class CodeEditorWidget(forms.Textarea):
         js = (
             'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/codemirror.min.js',
             'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/python/python.min.js',
+            'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/mode/markdown/markdown.min.js',
             'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/matchbrackets.min.js',
             'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/edit/closebrackets.min.js',
             'https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.16/addon/selection/active-line.min.js',
@@ -119,7 +120,27 @@ class CellAdminForm(forms.ModelForm):
         fields = '__all__'
         widgets = {
             'source_code': CodeEditorWidget(mode='python'),
+            'description': CodeEditorWidget(mode='markdown'),
         }
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Make source_code not required by default (will validate in clean)
+        self.fields['source_code'].required = False
+
+    def clean(self):
+        cleaned_data = super().clean()
+        cell_type = cleaned_data.get('cell_type')
+        source_code = cleaned_data.get('source_code')
+
+        # For code cells, source_code is required
+        if cell_type == 'code' and not source_code:
+            self.add_error('source_code', 'Source code is required for code cells.')
+
+        # For markdown cells, source_code is optional
+        # (no validation needed, it's already optional)
+
+        return cleaned_data
 
 
 class NotebookImportForm(forms.Form):
