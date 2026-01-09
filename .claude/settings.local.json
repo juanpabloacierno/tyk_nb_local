@@ -16,7 +16,8 @@
       "Bash(source venv/bin/activate)",
       "Bash(ls:*)",
       "Bash(source .venv/bin/activate)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "Bash(open:*)"
     ]
   }
 }

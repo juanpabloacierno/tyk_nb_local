@@ -617,10 +617,10 @@ class TyK:
         cid = str(cluster_id)
         self.cluster_summaries[cid] = self._html_safe(text or "")
 
-    def load_cluster_summaries(self, base_dir: str, filename: str = "executive_summary.txt", max_chars_per_file: int = 20000) -> int:
+    def load_cluster_summaries(self, base_dir: str, filename: str = "executive_abstract.txt", max_chars_per_file: int = 20000) -> int:
 
         import os, re
-
+        print(base_dir)
         if not base_dir or not os.path.isdir(base_dir):
             self._notify(f"Directorio no válido: <code>{base_dir}</code>", "error")
             return 0
@@ -1692,6 +1692,8 @@ class TyK:
           - Nodos más grandes (rango node_size_range).
         Renderiza HTML interactivo embebido con colorbar.
         """
+        #set_trace()  # Use this for debugging (requires web-pdb)
+
         if not self.cooc_data:
             self._notify("Sin datos de co-ocurrencia cargados. No es posible graficar la red.", "warn")
             return

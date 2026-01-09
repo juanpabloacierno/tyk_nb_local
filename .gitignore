@@ -11,3 +11,6 @@ wheels/
 venv
 
 data/
+
+# mac stupid stuff
+.DS_Store

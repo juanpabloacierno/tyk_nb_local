@@ -39,6 +39,28 @@
     {% endif %}
 </div>
 
+<!-- Debugging Help -->
+<details class="mb-6 bg-blue-50 border border-blue-200 rounded-lg">
+    <summary class="px-4 py-3 cursor-pointer text-blue-900 font-medium hover:bg-blue-100">
+        🔍 Debugging Tools Available
+    </summary>
+    <div class="px-4 pb-4 text-sm text-gray-700">
+        <p class="mb-2"><strong>Interactive Debugger:</strong></p>
+        <pre class="bg-white p-2 rounded border mb-3"><code>set_trace()  # Pause execution, open web debugger</code></pre>
+
+        <p class="mb-2"><strong>Quick Helpers:</strong></p>
+        <pre class="bg-white p-2 rounded border"><code>debug(x, y, z)       # Inspect variables
+inspect_obj(obj)     # Show object details
+vars_dump()          # List all variables
+trace("message")     # Timestamped log
+trace_log()          # Show all traces</code></pre>
+
+        <p class="mt-2 text-xs text-gray-600">
+            Requires: <code>pip install web-pdb</code>
+        </p>
+    </div>
+</details>
+
 <!-- Cells -->
 <div class="space-y-6" id="cells-container">
     {% for item in cells_data %}
@@ -187,6 +209,50 @@
 <script>
 const notebookSlug = '{{ notebook.slug }}';
 
+// Helper function to insert HTML with executable scripts
+function insertHtmlWithScripts(container, htmlString) {
+    // Clear container
+    container.innerHTML = '';
+
+    // Create a temporary div to parse the HTML
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = htmlString;
+
+    // Extract all script tags
+    const scripts = tempDiv.querySelectorAll('script');
+    const scriptContents = [];
+
+    scripts.forEach(script => {
+        scriptContents.push({
+            content: script.textContent,
+            src: script.src,
+            type: script.type || 'text/javascript'
+        });
+        // Remove script from temp div
+        script.remove();
+    });
+
+    // Insert the non-script HTML
+    container.innerHTML = tempDiv.innerHTML;
+
+    // Execute scripts in order
+    scriptContents.forEach(scriptInfo => {
+        const newScript = document.createElement('script');
+        newScript.type = scriptInfo.type;
+
+        if (scriptInfo.src) {
+            // External script
+            newScript.src = scriptInfo.src;
+        } else {
+            // Inline script
+            newScript.textContent = scriptInfo.content;
+        }
+
+        // Append to container so it executes
+        container.appendChild(newScript);
+    });
+}
+
 // Run setup cells
 async function runSetup() {
     const btn = document.getElementById('setup-btn');
@@ -219,6 +285,8 @@ async function runSetup() {
             banner.innerHTML = `<span class="font-medium">Initialization failed.</span> ${data.errors.join('; ')}`;
             text.textContent = 'Retry';
             btn.disabled = false;
+
+            console.log(data.errors);
         }
     } catch (error) {
         banner.className = 'mb-6 p-4 rounded-lg bg-red-100 text-red-800';
@@ -284,20 +352,55 @@ async function runCell(cellId) {
         if (data.success) {
             if (data.output_text) {
                 outputText.textContent = data.output_text;
+
+                // Detect debugger activation
+                if (data.output_text.includes('DEBUGGER ACTIVE')) {
+                    outputText.style.backgroundColor = '#fef3c7';
+                    outputText.style.border = '2px solid #f59e0b';
+                    outputText.style.padding = '12px';
+
+                    // Extract URL and make it clickable
+                    const urlMatch = data.output_text.match(/http:\/\/[^\s]+/);
+                    if (urlMatch) {
+                        const debugUrl = urlMatch[0];
+                        const linkHtml = `<div style="margin-top: 12px;">
+                            <a href="${debugUrl}" target="_blank"
+                               style="background: #3b82f6; color: white; padding: 8px 16px;
+                                      border-radius: 4px; text-decoration: none; display: inline-block;">
+                                🔍 Open Debugger
+                            </a>
+                        </div>`;
+                        insertHtmlWithScripts(outputHtml, linkHtml + (data.output_html || ''));
+                    }
+                } else {
+                    // Reset styles if not debugging
+                    outputText.style.backgroundColor = '';
+                    outputText.style.border = '';
+                    outputText.style.padding = '';
+                }
             }
-            if (data.output_html) {
-                outputHtml.innerHTML = data.output_html;
+            if (data.output_html && (!data.output_text || !data.output_text.includes('DEBUGGER ACTIVE'))) {
+                insertHtmlWithScripts(outputHtml, data.output_html);
             }
             execTime.textContent = `${data.execution_time.toFixed(2)}s`;
+
+            console.log(data);
+
         } else {
             outputError.classList.remove('hidden');
             outputError.textContent = data.error;
+
+            console.log(data);
+
         }
 
     } catch (error) {
         outputArea.classList.remove('hidden');
         outputArea.querySelector('.output-error').classList.remove('hidden');
         outputArea.querySelector('.output-error').textContent = error.message;
+
+        console.log(data);
+
     }
 
     // Reset button
