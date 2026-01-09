@@ -166,7 +166,8 @@ trace_log()          # Show all traces</code></pre>
                            value="{{ param.value }}"
                            class="param-input w-full border border-gray-300 rounded-md px-3 py-2 text-sm"
                            data-cell-id="{{ item.cell.id }}"
-                           data-param-name="{{ param.name }}">
+                           data-param-name="{{ param.name }}"
+                           {% if item.cell.auto_run %}oninput="debounceRunCell({{ item.cell.id }})"{% endif %}>
                     {% endif %}
                 </div>
                 {% endfor %}
@@ -208,6 +209,17 @@ trace_log()          # Show all traces</code></pre>
 {% block extra_js %}
 <script>
 const notebookSlug = '{{ notebook.slug }}';
+
+// Debounce helper for text inputs
+const debounceTimers = {};
+function debounceRunCell(cellId, delay = 800) {
+    if (debounceTimers[cellId]) {
+        clearTimeout(debounceTimers[cellId]);
+    }
+    debounceTimers[cellId] = setTimeout(() => {
+        runCell(cellId);
+    }, delay);
+}
 
 // Helper function to insert HTML with executable scripts
 function insertHtmlWithScripts(container, htmlString) {
