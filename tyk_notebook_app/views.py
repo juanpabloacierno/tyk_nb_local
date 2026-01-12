@@ -9,6 +9,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import login_required
 from django.conf import settings
 from django.db.models import Q
 
@@ -16,25 +17,21 @@ from .models import Notebook, Cell, Parameter, Execution, NotebookSession
 from .executor import session_manager
 
 
+@login_required
 def notebook_list(request):
     """List all available notebooks"""
     notebooks = Notebook.objects.filter(is_active=True)
     return render(request, "notebook/list.html", {"notebooks": notebooks})
 
 
+@login_required
 def notebook_detail(request, slug):
     """Display a notebook with interactive cells"""
     notebook = get_object_or_404(Notebook, slug=slug, is_active=True)
 
-    # Get or create session
-    session_key = request.session.session_key
-    if not session_key:
-        request.session.create()
-        session_key = request.session.session_key
-
-    # Get notebook session for parameter persistence
+    # Get notebook session for parameter persistence (per user)
     nb_session, created = NotebookSession.objects.get_or_create(
-        notebook=notebook, session_key=session_key, defaults={"parameter_values": {}}
+        notebook=notebook, user=request.user, defaults={"parameter_values": {}}
     )
 
     # Get cells with their parameters (executable cells + markdown cells)
@@ -85,21 +82,17 @@ def notebook_detail(request, slug):
     context = {
         "notebook": notebook,
         "cells_data": cells_data,
-        "session_key": session_key,
         "setup_complete": nb_session.kernel_state.get("setup_complete", False),
     }
 
     return render(request, "notebook/detail.html", context)
 
 
+@login_required
 @require_http_methods(["POST"])
 def run_setup(request, slug):
     """Initialize the notebook session by running setup cells"""
     notebook = get_object_or_404(Notebook, slug=slug)
-
-    session_key = request.session.session_key
-    if not session_key:
-        return JsonResponse({"error": "No session"}, status=400)
 
     # Get data path from settings or notebook metadata
     base_path = getattr(settings, "TYK_DATA_PATH", None)
@@ -107,7 +100,8 @@ def run_setup(request, slug):
         # Try to extract from notebook source
         base_path = os.path.dirname(notebook.source_file)
 
-    # Create executor session
+    # Create executor session (use user ID as session key)
+    session_key = f"user_{request.user.id}"
     executor = session_manager.get_or_create_session(session_key, base_path=base_path)
 
     # Run setup cells
@@ -124,7 +118,7 @@ def run_setup(request, slug):
 
     # Update session state
     nb_session, _ = NotebookSession.objects.get_or_create(
-        notebook=notebook, session_key=session_key
+        notebook=notebook, user=request.user
     )
     nb_session.kernel_state["setup_complete"] = len(errors) == 0
     nb_session.save()
@@ -138,14 +132,11 @@ def run_setup(request, slug):
     )
 
 
+@login_required
 @require_http_methods(["POST"])
 def run_cell(request, cell_id):
     """Execute a single cell with provided parameters"""
     cell = get_object_or_404(Cell, id=cell_id)
-
-    session_key = request.session.session_key
-    if not session_key:
-        return JsonResponse({"error": "No session"}, status=400)
 
     # Parse parameters from request
     try:
@@ -154,7 +145,8 @@ def run_cell(request, cell_id):
     except json.JSONDecodeError:
         params = {}
 
-    # Get executor
+    # Get executor (use user ID as session key)
+    session_key = f"user_{request.user.id}"
     base_path = getattr(settings, "TYK_DATA_PATH", None)
     if not base_path:
         base_path = os.path.dirname(cell.notebook.source_file)
@@ -177,7 +169,7 @@ def run_cell(request, cell_id):
 
     # Save parameter values to session
     nb_session, _ = NotebookSession.objects.get_or_create(
-        notebook=cell.notebook, session_key=session_key
+        notebook=cell.notebook, user=request.user
     )
     for param_name, value in params.items():
         nb_session.parameter_values[f"{cell.id}_{param_name}"] = value
@@ -196,42 +188,42 @@ def run_cell(request, cell_id):
     )
 
 
+@login_required
 @require_http_methods(["POST"])
 def reset_session(request, slug):
     """Reset the notebook session"""
     notebook = get_object_or_404(Notebook, slug=slug)
 
-    session_key = request.session.session_key
-    if session_key:
-        session_manager.reset_session(session_key)
+    # Reset executor session (use user ID as session key)
+    session_key = f"user_{request.user.id}"
+    session_manager.reset_session(session_key)
 
-        # Reset DB session
-        NotebookSession.objects.filter(
-            notebook=notebook, session_key=session_key
-        ).delete()
+    # Reset DB session
+    NotebookSession.objects.filter(
+        notebook=notebook, user=request.user
+    ).delete()
 
     return JsonResponse({"success": True})
 
 
+@login_required
 def get_cell_parameters(request, cell_id):
     """Get parameter form HTML for a cell"""
     cell = get_object_or_404(Cell, id=cell_id)
     parameters = cell.parameters.all()
 
     # Get current values from session
-    session_key = request.session.session_key
     current_values = {}
-    if session_key:
-        try:
-            nb_session = NotebookSession.objects.get(
-                notebook=cell.notebook, session_key=session_key
-            )
-            for param in parameters:
-                key = f"{cell.id}_{param.name}"
-                if key in nb_session.parameter_values:
-                    current_values[param.name] = nb_session.parameter_values[key]
-        except NotebookSession.DoesNotExist:
-            pass
+    try:
+        nb_session = NotebookSession.objects.get(
+            notebook=cell.notebook, user=request.user
+        )
+        for param in parameters:
+            key = f"{cell.id}_{param.name}"
+            if key in nb_session.parameter_values:
+                current_values[param.name] = nb_session.parameter_values[key]
+    except NotebookSession.DoesNotExist:
+        pass
 
     params_data = []
     for param in parameters:
@@ -258,6 +250,7 @@ def get_cell_parameters(request, cell_id):
     )
 
 
+@login_required
 def execution_history(request, slug):
     """View execution history for a notebook"""
     notebook = get_object_or_404(Notebook, slug=slug)

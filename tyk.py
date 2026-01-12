@@ -992,10 +992,23 @@ class TyK:
         height: int = 650,
         colorscale: str = "Viridis",
         show_values_as_percent: bool = True,
+        method: str = "modern",
     ):
         """
         Mapa mundial global (usando el DF precalculado en __init__).
         Más estético, con efecto hover, bordes suaves y fondo azulado.
+
+        Parameters:
+        -----------
+        method : str, default "modern"
+            - "modern": Uses Plotly Express (px.choropleth) - cleaner, more concise API
+            - "classic": Uses Plotly Graph Objects (go.Choropleth) - traditional method with more control
+        colorscale : str, default "Viridis"
+            Color scale for the choropleth map
+        height : int, default 650
+            Height of the map in pixels
+        show_values_as_percent : bool, default True
+            Show values as percentages in the colorbar
         """
         import pandas as pd
         import plotly.graph_objects as go
@@ -1035,65 +1048,140 @@ class TyK:
             self._notify("No se pudieron mapear países a códigos ISO3.", "error")
             return
 
-        # Formateo del valor en hover
+        # Preparar datos para hover
+        df["articles"] = df.get("articles", 0).fillna(0).astype(int)
 
-        hover_text = []
-        for _, r in df.iterrows():
-            val = r["value"]
-            arts = int(r.get("articles", 0))
-            val_str = f"{int(round(float(arts)))}".replace(".", ",")
+        if method == "modern":
+            # ---- MODERN METHOD: Plotly Express ----
+            # More concise, cleaner API with automatic styling
 
-            hover_text.append(
-                f"<b>{r['country']}</b><br>"
-                f"{('Frecuencia: ' + f'{val:.2f}%') if show_values_as_percent else 'Valor: ' + f'{val:,}'}<br>"
-                f"Artículos: {val_str}"
+            # Prepare hover template
+            df["hover_info"] = df.apply(
+                lambda r: (
+                    f"{r['country']}<br>"
+                    f"{'Frecuencia: ' + f'{r['value']:.2f}%' if show_values_as_percent else 'Valor: ' + f'{r['value']:,.0f}'}<br>"
+                    f"Artículos: {int(r['articles']):,}"
+                ),
+                axis=1
             )
-        df["hover"] = hover_text
 
-        # ---- Plotly choropleth con estilo mejorado ----
-        fig = go.Figure(
-            data=go.Choropleth(
-                locations=df["iso3"],
-                z=df["value"],
-                text=df["hover"],
-                hoverinfo="text",
-                colorscale=colorscale,
-                colorbar_title="Frecuencia (%)" if show_values_as_percent else "Cantidad",
+            # Create modern choropleth with Plotly Express
+            fig = px.choropleth(
+                df,
+                locations="iso3",
+                color="value",
+                hover_name="country",
+                hover_data={
+                    "iso3": False,
+                    "value": True,
+                    "articles": ":,",
+                    "hover_info": False
+                },
+                color_continuous_scale=colorscale,
+                labels={
+                    "value": "Frecuencia (%)" if show_values_as_percent else "Cantidad",
+                    "articles": "Artículos"
+                },
+                title="<b>Countries — Global Publications Distribution</b>",
+                projection="natural earth",
+                height=height,
+            )
+
+            # Update layout for consistent styling with classic method
+            fig.update_layout(
+                title=dict(
+                    x=0.5,
+                    xanchor="center",
+                    yanchor="top",
+                    font=dict(size=20, color="#222"),
+                ),
+                geo=dict(
+                    showframe=False,
+                    showcoastlines=True,
+                    coastlinecolor="rgba(90,90,90,0.4)",
+                    showocean=True,
+                    oceancolor="rgba(173, 216, 230, 0.35)",
+                    landcolor="rgba(255,255,255,0.0)",
+                    bgcolor="rgba(0,0,0,0)",
+                ),
+                margin=dict(l=0, r=0, t=60, b=0),
+                coloraxis_colorbar=dict(
+                    title="Frecuencia (%)" if show_values_as_percent else "Cantidad",
+                    thickness=15,
+                    len=0.7,
+                ),
+            )
+
+            # Update traces for better appearance
+            fig.update_traces(
                 marker_line_color="white",
-                marker_line_width=0.6,
-                reversescale=False,
-                showscale=True,
+                marker_line_width=0.5,
+                hovertemplate="<b>%{hovertext}</b><br><br>" +
+                            ("Frecuencia: %{z:.2f}%<br>" if show_values_as_percent else "Valor: %{z:,.0f}<br>") +
+                            "Artículos: %{customdata[1]:,}<extra></extra>",
             )
-        )
 
-        fig.update_layout(
-            title=dict(
-                text="<b>Countries — Global Publications Distribution</b>",
-                x=0.5,
-                xanchor="center",
-                yanchor="top",
-                font=dict(size=20, color="#222"),
-            ),
-            geo=dict(
-                showframe=False,
-                showcoastlines=True,
-                coastlinecolor="rgba(90,90,90,0.4)",
-                projection_type="natural earth",
-                showocean=True,
-                oceancolor="rgba(173, 216, 230, 0.35)",
-                landcolor="rgba(255,255,255,0.0)",
-                bgcolor="rgba(0,0,0,0)",
-                countrycolor="rgba(80,80,80,0.4)",
-            ),
-            height=height,
-            margin=dict(l=0, r=0, t=60, b=0),
-            hoverlabel=dict(
-                bgcolor="white",
-                font_size=14,
-                font_family="Inter, sans-serif",
-                font_color="#111",
-            ),
-        )
+        else:
+            # ---- CLASSIC METHOD: Plotly Graph Objects ----
+            # Traditional method with more granular control
+
+            hover_text = []
+            for _, r in df.iterrows():
+                val = r["value"]
+                arts = int(r["articles"])
+                val_str = f"{arts:,}".replace(".", ",")
+
+                hover_text.append(
+                    f"<b>{r['country']}</b><br>"
+                    f"{('Frecuencia: ' + f'{val:.2f}%') if show_values_as_percent else 'Valor: ' + f'{val:,}'}<br>"
+                    f"Artículos: {val_str}"
+                )
+            df["hover"] = hover_text
+
+            # Create classic choropleth with Graph Objects
+            fig = go.Figure(
+                data=go.Choropleth(
+                    locations=df["iso3"],
+                    z=df["value"],
+                    text=df["hover"],
+                    hoverinfo="text",
+                    colorscale=colorscale,
+                    colorbar_title="Frecuencia (%)" if show_values_as_percent else "Cantidad",
+                    marker_line_color="white",
+                    marker_line_width=0.6,
+                    reversescale=False,
+                    showscale=True,
+                )
+            )
+
+            fig.update_layout(
+                title=dict(
+                    text="<b>Countries — Global Publications Distribution</b>",
+                    x=0.5,
+                    xanchor="center",
+                    yanchor="top",
+                    font=dict(size=20, color="#222"),
+                ),
+                geo=dict(
+                    showframe=False,
+                    showcoastlines=True,
+                    coastlinecolor="rgba(90,90,90,0.4)",
+                    projection_type="natural earth",
+                    showocean=True,
+                    oceancolor="rgba(173, 216, 230, 0.35)",
+                    landcolor="rgba(255,255,255,0.0)",
+                    bgcolor="rgba(0,0,0,0)",
+                    countrycolor="rgba(80,80,80,0.4)",
+                ),
+                height=height,
+                margin=dict(l=0, r=0, t=60, b=0),
+                hoverlabel=dict(
+                    bgcolor="white",
+                    font_size=14,
+                    font_family="Inter, sans-serif",
+                    font_color="#111",
+                ),
+            )
 
         # ---- Mostrar el mapa ----
         try:

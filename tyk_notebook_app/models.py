@@ -3,6 +3,7 @@ Django models for the TyK Notebook Application.
 Stores notebooks, cells, parameters, and execution history.
 """
 from django.db import models
+from django.contrib.auth.models import User
 from django.utils import timezone
 import json
 
@@ -146,12 +147,15 @@ class Execution(models.Model):
 class NotebookSession(models.Model):
     """Tracks a user's session with a notebook (for state persistence)"""
     notebook = models.ForeignKey(Notebook, on_delete=models.CASCADE, related_name='sessions')
-    session_key = models.CharField(max_length=100, unique=True)
+    user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notebook_sessions', null=True)
     kernel_state = models.JSONField(default=dict, help_text="Serialized kernel variables")
     parameter_values = models.JSONField(default=dict, help_text="Current parameter values")
     last_executed_cell = models.ForeignKey(Cell, on_delete=models.SET_NULL, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    class Meta:
+        unique_together = ['notebook', 'user']
+
     def __str__(self):
-        return f"Session {self.session_key[:8]} - {self.notebook.name}"
+        return f"{self.user.username if self.user else 'Anonymous'} - {self.notebook.name}"

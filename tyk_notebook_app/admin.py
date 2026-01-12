@@ -404,14 +404,10 @@ class ExecutionAdmin(admin.ModelAdmin):
 @admin.register(NotebookSession)
 class NotebookSessionAdmin(admin.ModelAdmin):
     """Admin for Notebook Sessions"""
-    list_display = ['session_key_short', 'notebook', 'last_executed_cell', 'updated_at']
-    list_filter = ['notebook', 'created_at']
-    readonly_fields = ['session_key', 'kernel_state', 'parameter_values',
+    list_display = ['user', 'notebook', 'last_executed_cell', 'updated_at']
+    list_filter = ['notebook', 'user', 'created_at']
+    readonly_fields = ['user', 'notebook', 'kernel_state', 'parameter_values',
                        'created_at', 'updated_at']
-
-    def session_key_short(self, obj):
-        return obj.session_key[:16] + '...' if len(obj.session_key) > 16 else obj.session_key
-    session_key_short.short_description = 'Session'
 
     def has_add_permission(self, request):
         return False

@@ -90,6 +90,15 @@
                         Admin
                     </a>
                     {% block nav_extra %}{% endblock %}
+                    {% if user.is_authenticated %}
+                    <span class="text-sm text-gray-600">
+                        Welcome, <strong>{{ user.username }}</strong>
+                    </span>
+                    <a href="{% url 'logout' %}"
+                       class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-md text-sm transition-colors">
+                        Logout
+                    </a>
+                    {% endif %}
                 </div>
             </div>
         </div>

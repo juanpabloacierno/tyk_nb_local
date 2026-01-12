@@ -85,5 +85,19 @@ STATICFILES_DIRS = [BASE_DIR / 'static'] if (BASE_DIR / 'static').exists() else 
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
+# Authentication settings
+LOGIN_URL = '/accounts/login/'
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/accounts/login/'
+
+# Email settings for password reset (console backend for development)
+EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+# For production, configure these:
+# EMAIL_HOST = 'smtp.gmail.com'
+# EMAIL_PORT = 587
+# EMAIL_USE_TLS = True
+# EMAIL_HOST_USER = 'your-email@example.com'
+# EMAIL_HOST_PASSWORD = 'your-password'
+
 # TyK specific settings
 TYK_DATA_PATH = os.environ.get('TYK_DATA_PATH', str(PROJECT_ROOT))
