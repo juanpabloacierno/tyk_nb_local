@@ -13,6 +13,7 @@ urlpatterns = [
     path('notebook/<slug:slug>/setup/', views.run_setup, name='setup'),
     path('notebook/<slug:slug>/reset/', views.reset_session, name='reset'),
     path('notebook/<slug:slug>/history/', views.execution_history, name='history'),
+    path('notebook/<slug:slug>/export/', views.notebook_export, name='export'),
 
     # Cell execution
     path('cell/<int:cell_id>/run/', views.run_cell, name='run_cell'),

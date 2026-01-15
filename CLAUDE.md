@@ -55,8 +55,13 @@ Notebook File (.py/.ipynb)
 **Views** (`tyk_notebook_app/views.py`): Key endpoints:
 - `/` - notebook list
 - `/notebook/<slug>/` - interactive notebook interface
+- `/notebook/<slug>/export/` - export notebook as .py file
 - `/cell/<id>/run/` - execute single cell
 - `/api/execute/` - REST API for programmatic access
+
+**Importer/Exporter** (`tyk_notebook_app/importer.py`):
+- `import_notebook(filepath, name, description)` - imports .py/.ipynb files into database
+- `export_notebook(notebook)` - exports a Notebook model to Colab-style .py format
 
 **TyK Class** (`tyk.py`): Specialized data analysis class for bibliometric/cluster analysis, works with networkx graphs, geolocation, JSON clusters. Used by demo notebooks.
 
@@ -79,3 +84,28 @@ Per-user session state stored in `NotebookSession.parameter_values` (JSON field)
 - Mock IPython.display module allows Colab code to run outside Jupyter
 - Database stored in `tyk_notebook_app/db.sqlite3` (dev) or `tyk_data/db.sqlite3` (packaged)
 - Demo data in `data/HVOA/` directory (bibliometric cluster data)
+
+## Import/Export
+
+### Importing Notebooks
+```bash
+python manage.py import_notebook path/to/notebook.py --name "My Notebook"
+```
+Or programmatically:
+```python
+from tyk_notebook_app.importer import import_notebook
+notebook = import_notebook("path/to/file.py", name="My Notebook")
+```
+
+### Exporting Notebooks
+- **UI**: Click the download icon on the notebook list page
+- **URL**: GET `/notebook/<slug>/export/` returns a downloadable .py file
+- **Programmatic**:
+```python
+from tyk_notebook_app.importer import export_notebook
+from tyk_notebook_app.models import Notebook
+nb = Notebook.objects.get(slug="my-notebook")
+content = export_notebook(nb)  # Returns Colab-style Python string
+```
+
+Export format preserves all cells, parameters (`@param`), titles (`@title`), and markdown blocks. Exported files can be re-imported into any TyK Notebook instance.

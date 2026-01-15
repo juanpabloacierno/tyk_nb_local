@@ -135,3 +135,146 @@ def get_setup_code(notebook: 'Notebook') -> str:
     """
     setup_cells = notebook.cells.filter(is_setup_cell=True).order_by('order')
     return '\n\n'.join(cell.source_code for cell in setup_cells)
+
+
+def export_notebook(notebook: 'Notebook') -> str:
+    """
+    Export a notebook to Colab-style Python format.
+
+    This format can be re-imported using import_notebook().
+
+    Args:
+        notebook: The Notebook instance to export
+
+    Returns:
+        String containing the notebook in .py format
+    """
+    import json
+
+    lines = []
+
+    # Add header comment
+    lines.append(f'# -*- coding: utf-8 -*-')
+    lines.append(f'"""')
+    lines.append(f'TyK Notebook Export: {notebook.name}')
+    if notebook.description:
+        lines.append(f'')
+        lines.append(notebook.description)
+    lines.append(f'"""')
+    lines.append('')
+
+    # Export each cell
+    cells = notebook.cells.all().order_by('order')
+
+    for cell in cells:
+        # Add cell separator
+        lines.append('')
+
+        if cell.cell_type == 'markdown':
+            # Export markdown cells as triple-quoted strings
+            lines.append('"""')
+            lines.append(cell.source_code)
+            lines.append('"""')
+        else:
+            # Code cell - add title directive if present
+            title_line = ''
+            if cell.title:
+                title_line = f'# @title {cell.title}'
+                if cell.auto_run:
+                    title_line += ' {"run":"auto"}'
+                lines.append(title_line)
+
+            # Get source code lines
+            source_lines = cell.source_code.split('\n')
+
+            # Get parameters for this cell
+            params = list(cell.parameters.all().order_by('order'))
+            param_names = {p.name for p in params}
+
+            # Process each line, adding @param directives where needed
+            for source_line in source_lines:
+                # Skip the original @title line if present
+                if source_line.strip().startswith('# @title'):
+                    continue
+
+                # Check if this line contains a parameter assignment
+                param_added = False
+                for param in params:
+                    # Match: var_name = value (potentially with existing @param)
+                    import re
+                    pattern = rf'^(\s*)({re.escape(param.name)})\s*=\s*([^#\n]+)'
+                    match = re.match(pattern, source_line)
+
+                    if match:
+                        indent = match.group(1)
+                        var_name = match.group(2)
+                        # Use default value from parameter model
+                        default_val = _format_default_value(param.default_value, param.param_type)
+                        param_spec = _format_param_spec(param)
+
+                        lines.append(f'{indent}{var_name} = {default_val}  # @param {param_spec}')
+                        param_added = True
+                        break
+
+                if not param_added:
+                    # Regular line - skip if it has @param (we've handled params above)
+                    if '# @param' not in source_line:
+                        lines.append(source_line)
+
+    return '\n'.join(lines)
+
+
+def _format_default_value(value: str, param_type: str) -> str:
+    """Format a default value for export based on parameter type."""
+    if param_type == 'boolean':
+        return 'True' if value.lower() in ('true', '1', 'yes') else 'False'
+    elif param_type == 'number' or param_type == 'slider':
+        try:
+            # Try to preserve as number
+            if '.' in str(value):
+                return str(float(value))
+            return str(int(value))
+        except (ValueError, TypeError):
+            return '0'
+    elif param_type == 'string':
+        # Escape quotes in string
+        escaped = str(value).replace('"', '\\"')
+        return f'"{escaped}"'
+    elif param_type == 'dropdown':
+        # For dropdowns, quote if string
+        try:
+            # Check if it's a number
+            float(value)
+            return str(value)
+        except (ValueError, TypeError):
+            escaped = str(value).replace('"', '\\"')
+            return f'"{escaped}"'
+    else:
+        # Default: treat as string
+        escaped = str(value).replace('"', '\\"')
+        return f'"{escaped}"'
+
+
+def _format_param_spec(param) -> str:
+    """Format the @param specification for a parameter."""
+    import json
+
+    if param.param_type == 'dropdown' and param.options:
+        # Dropdown: list of options
+        return json.dumps(param.options)
+    elif param.param_type == 'boolean':
+        return '{"type":"boolean"}'
+    elif param.param_type == 'string':
+        return '{"type":"string"}'
+    elif param.param_type == 'slider':
+        spec = {
+            "type": "slider",
+            "min": param.min_value or 0,
+            "max": param.max_value or 100,
+            "step": param.step or 1
+        }
+        return json.dumps(spec)
+    elif param.param_type == 'number':
+        return '{"type":null}'
+    else:
+        return '{"type":"string"}'

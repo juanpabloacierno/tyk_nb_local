@@ -15,6 +15,7 @@ from django.db.models import Q
 
 from .models import Notebook, Cell, Parameter, Execution, NotebookSession
 from .executor import session_manager
+from .importer import export_notebook
 
 
 @login_required
@@ -268,6 +269,22 @@ def execution_history(request, slug):
             "executions": executions,
         },
     )
+
+
+@login_required
+def notebook_export(request, slug):
+    """Export a notebook as a downloadable .py file"""
+    notebook = get_object_or_404(Notebook, slug=slug, is_active=True)
+
+    # Generate export content
+    content = export_notebook(notebook)
+
+    # Create response with file download
+    response = HttpResponse(content, content_type='text/x-python')
+    filename = f"{notebook.slug}.py"
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+
+    return response
 
 
 # API views for programmatic access
