@@ -27,10 +27,16 @@
             <p class="text-gray-600 text-sm mb-4 line-clamp-2">
                 {{ notebook.description|default:"No description available" }}
             </p>
-            <div class="flex space-x-3">
+            <div class="flex space-x-2">
+                <a href="{% url 'notebook:dashboard' notebook.slug %}"
+                   class="flex-1 bg-purple-600 hover:bg-purple-700 text-white text-center py-2 px-3 rounded-md transition-colors text-sm"
+                   title="Open Dashboard View">
+                    Dashboard
+                </a>
                 <a href="{% url 'notebook:detail' notebook.slug %}"
-                   class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-center py-2 px-4 rounded-md transition-colors">
-                    Open Notebook
+                   class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-center py-2 px-3 rounded-md transition-colors text-sm"
+                   title="Open Classic View">
+                    Notebook
                 </a>
                 <a href="{% url 'notebook:history' notebook.slug %}"
                    class="bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-4 rounded-md transition-colors"

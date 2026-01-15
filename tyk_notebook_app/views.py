@@ -13,7 +13,7 @@ from django.contrib.auth.decorators import login_required
 from django.conf import settings
 from django.db.models import Q
 
-from .models import Notebook, Cell, Parameter, Execution, NotebookSession
+from .models import Notebook, Cell, Parameter, Execution, NotebookSession, DashboardChart
 from .executor import session_manager
 from .importer import export_notebook
 
@@ -285,6 +285,176 @@ def notebook_export(request, slug):
     response['Content-Disposition'] = f'attachment; filename="{filename}"'
 
     return response
+
+
+@login_required
+def dashboard_detail(request, slug):
+    """Display a notebook with split-screen dashboard + cells layout"""
+    notebook = get_object_or_404(Notebook, slug=slug, is_active=True)
+
+    # Get notebook session for parameter persistence (per user)
+    nb_session, created = NotebookSession.objects.get_or_create(
+        notebook=notebook, user=request.user, defaults={"parameter_values": {}}
+    )
+
+    # Get cells with their parameters (executable cells + markdown cells)
+    cells = notebook.cells.filter(
+        Q(is_executable=True) | Q(cell_type='markdown')
+    ).prefetch_related("parameters")
+
+    # Build cell data with current parameter values
+    cells_data = []
+    for cell in cells:
+        params_data = []
+        for param in cell.parameters.all():
+            current_value = nb_session.parameter_values.get(
+                f"{cell.id}_{param.name}", param.default_value
+            )
+            params_data.append(
+                {
+                    "id": param.id,
+                    "name": param.name,
+                    "type": param.param_type,
+                    "value": current_value,
+                    "default": param.default_value,
+                    "options": param.get_options_list(),
+                    "min": param.min_value,
+                    "max": param.max_value,
+                    "step": param.step,
+                }
+            )
+
+        description_html = ""
+        if cell.description:
+            description_html = markdown.markdown(
+                cell.description,
+                extensions=['fenced_code', 'tables', 'nl2br']
+            )
+
+        cells_data.append(
+            {
+                "cell": cell,
+                "parameters": params_data,
+                "has_params": len(params_data) > 0,
+                "description_html": description_html,
+            }
+        )
+
+    # Get dashboard charts from database or use defaults
+    dashboard_charts = list(notebook.dashboard_charts.filter(is_active=True).order_by('order'))
+
+    # If no charts configured, create default set
+    if not dashboard_charts:
+        default_chart_types = [
+            ('world_map', 'Global Publications Map', {}),
+            ('clusters_network', 'TOP Clusters Network', {}),
+            ('subclusters_network', 'Subclusters Network', {}),
+            ('cooc_network', 'Co-occurrence Network', {'node_type': 'K', 'max_nodes': 80}),
+            ('cluster_stats', 'Cluster Details', {}),
+        ]
+        charts_data = [
+            {
+                'chart_type': ct,
+                'title': title,
+                'default_params': params,
+                'needs_cluster': ct in ('subclusters_network', 'cluster_stats'),
+            }
+            for ct, title, params in default_chart_types
+        ]
+    else:
+        charts_data = [
+            {
+                'chart_type': chart.chart_type,
+                'title': chart.get_title(),
+                'default_params': chart.default_params or {},
+                'needs_cluster': chart.chart_type in ('subclusters_network', 'cluster_stats'),
+            }
+            for chart in dashboard_charts
+        ]
+
+    context = {
+        "notebook": notebook,
+        "cells_data": cells_data,
+        "charts_data": charts_data,
+        "charts_data_json": json.dumps(charts_data),
+        "setup_complete": nb_session.kernel_state.get("setup_complete", False),
+    }
+
+    return render(request, "notebook/dashboard.html", context)
+
+
+@login_required
+@require_http_methods(["POST"])
+def render_dashboard_chart(request, slug):
+    """Render a single dashboard chart with given parameters"""
+    notebook = get_object_or_404(Notebook, slug=slug)
+
+    try:
+        data = json.loads(request.body)
+        chart_type = data.get("chart_type")
+        params = data.get("params", {})
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+    # Get executor session
+    session_key = f"user_{request.user.id}"
+    base_path = getattr(settings, "TYK_DATA_PATH", None)
+    if not base_path:
+        base_path = os.path.dirname(notebook.source_file)
+
+    executor = session_manager.get_or_create_session(session_key, base_path=base_path)
+
+    # Check if TyK is initialized in session
+    if "tyk" not in executor.namespace:
+        return JsonResponse({
+            "error": "TyK not initialized. Please run setup first.",
+            "needs_setup": True
+        }, status=400)
+
+    # Build code to execute based on chart_type
+    code = _build_chart_code(chart_type, params)
+
+    # Execute and capture output
+    stdout, html, error, exec_time = executor.execute(code)
+
+    return JsonResponse({
+        "success": not error,
+        "html": html,
+        "stdout": stdout,
+        "error": error,
+        "execution_time": exec_time,
+    })
+
+
+def _build_chart_code(chart_type: str, params: dict) -> str:
+    """Build Python code to generate a specific chart type"""
+
+    if chart_type == "world_map":
+        colorscale = params.get("colorscale", "Viridis")
+        return f'tyk.plot_countries_map_global(colorscale="{colorscale}", height=350, method="modern")'
+
+    elif chart_type == "clusters_network":
+        min_weight = params.get("min_edge_weight", 0.0)
+        return f'tyk.plot_clusters_graph_interactive(min_edge_weight={min_weight}, mode="inline")'
+
+    elif chart_type == "subclusters_network":
+        top_id = params.get("cluster_id", "1")
+        min_weight = params.get("min_edge_weight", 0.0)
+        return f'tyk.plot_subclusters_graph_interactive("{top_id}", min_edge_weight={min_weight}, mode="inline")'
+
+    elif chart_type == "cooc_network":
+        node_type = params.get("node_type", "K")
+        max_nodes = params.get("max_nodes", 100)
+        return f'tyk.plot_cooc_network_interactive(node_type="{node_type}", max_nodes={max_nodes}, height_px=400, mode="inline")'
+
+    elif chart_type == "cluster_stats":
+        cluster_id = params.get("cluster_id", "")
+        stuff_type = params.get("stuff_type", "K")
+        if cluster_id:
+            return f'tyk.describe_cluster_params("TOP", "{stuff_type}", cluster_top="{cluster_id}")'
+        return '# Select a cluster first'
+
+    return "# Unknown chart type"
 
 
 # API views for programmatic access

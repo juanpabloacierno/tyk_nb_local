@@ -144,6 +144,40 @@ class Execution(models.Model):
         return f"{self.cell} - {self.status} at {self.created_at}"
 
 
+class DashboardChart(models.Model):
+    """Configures which charts appear in the dashboard view"""
+    CHART_TYPE_CHOICES = [
+        ('world_map', 'Global Publications Map'),
+        ('clusters_network', 'TOP Clusters Network'),
+        ('subclusters_network', 'Subclusters Network'),
+        ('cooc_network', 'Co-occurrence Network'),
+        ('cluster_stats', 'Cluster Statistics'),
+    ]
+
+    notebook = models.ForeignKey(Notebook, on_delete=models.CASCADE, related_name='dashboard_charts')
+    chart_type = models.CharField(max_length=50, choices=CHART_TYPE_CHOICES)
+    title = models.CharField(max_length=255, blank=True, help_text="Custom title (leave blank for default)")
+    order = models.PositiveIntegerField(default=0, help_text="Display order in dashboard")
+    is_active = models.BooleanField(default=True)
+    default_params = models.JSONField(
+        default=dict, blank=True,
+        help_text="Default parameters (e.g., colorscale, node_type, max_nodes)"
+    )
+
+    class Meta:
+        ordering = ['order']
+        unique_together = ['notebook', 'chart_type']
+
+    def __str__(self):
+        return f"{self.notebook.name} - {self.get_chart_type_display()}"
+
+    def get_title(self):
+        """Return custom title or default based on chart type"""
+        if self.title:
+            return self.title
+        return dict(self.CHART_TYPE_CHOICES).get(self.chart_type, self.chart_type)
+
+
 class NotebookSession(models.Model):
     """Tracks a user's session with a notebook (for state persistence)"""
     notebook = models.ForeignKey(Notebook, on_delete=models.CASCADE, related_name='sessions')

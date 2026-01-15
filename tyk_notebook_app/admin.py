@@ -11,7 +11,7 @@ from django.shortcuts import render, redirect
 from django.http import HttpResponseRedirect
 from django import forms
 from django.utils.safestring import mark_safe
-from .models import Notebook, Cell, Parameter, Execution, NotebookSession
+from .models import Notebook, Cell, Parameter, Execution, NotebookSession, DashboardChart
 from .importer import import_notebook
 
 
@@ -192,6 +192,14 @@ class CellInline(admin.TabularInline):
     show_change_link = True
 
 
+class DashboardChartInline(admin.TabularInline):
+    """Inline admin for dashboard charts"""
+    model = DashboardChart
+    extra = 0
+    fields = ['order', 'chart_type', 'title', 'is_active', 'default_params']
+    ordering = ['order']
+
+
 @admin.register(Notebook)
 class NotebookAdmin(admin.ModelAdmin):
     """Admin for Notebooks"""
@@ -199,7 +207,7 @@ class NotebookAdmin(admin.ModelAdmin):
     list_filter = ['is_active', 'created_at']
     search_fields = ['name', 'slug', 'description']
     prepopulated_fields = {'slug': ('name',)}
-    inlines = [CellInline]
+    inlines = [DashboardChartInline, CellInline]
     change_list_template = 'admin/notebook/notebook_changelist.html'
 
     fieldsets = (
@@ -411,3 +419,22 @@ class NotebookSessionAdmin(admin.ModelAdmin):
 
     def has_add_permission(self, request):
         return False
+
+
+@admin.register(DashboardChart)
+class DashboardChartAdmin(admin.ModelAdmin):
+    """Admin for Dashboard Charts"""
+    list_display = ['notebook', 'chart_type', 'title', 'order', 'is_active']
+    list_filter = ['notebook', 'chart_type', 'is_active']
+    search_fields = ['notebook__name', 'title']
+    ordering = ['notebook', 'order']
+
+    fieldsets = (
+        (None, {
+            'fields': ('notebook', 'chart_type', 'title', 'order', 'is_active')
+        }),
+        ('Default Parameters', {
+            'fields': ('default_params',),
+            'description': 'JSON object with default parameters. Examples: {"colorscale": "Viridis"}, {"node_type": "K", "max_nodes": 100}'
+        }),
+    )

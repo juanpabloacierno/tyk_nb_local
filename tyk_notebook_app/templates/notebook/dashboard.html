@@ -1,0 +1,542 @@
+{% extends "notebook/base.html" %}
+
+{% block title %}{{ notebook.name }} - Dashboard{% endblock %}
+
+{% block nav_extra %}
+<a href="{% url 'notebook:detail' notebook.slug %}" class="text-gray-600 hover:text-blue-600 text-sm mr-4">
+    Classic View
+</a>
+<a href="{% url 'notebook:history' notebook.slug %}" class="text-gray-600 hover:text-blue-600 text-sm mr-4" target="_blank">
+    History
+</a>
+<button onclick="resetSession()" class="text-gray-600 hover:text-red-600 text-sm">
+    Reset
+</button>
+{% endblock %}
+
+{% block content %}
+<!-- Override to use full width - close the parent container and reopen -->
+</main>
+<main class="w-full py-4 px-4">
+
+<!-- Header -->
+<div class="mb-3 flex items-center justify-between">
+    <div>
+        <h1 class="text-xl font-bold text-gray-900">{{ notebook.name }}</h1>
+        {% if notebook.description %}
+        <p class="text-sm text-gray-600">{{ notebook.description }}</p>
+        {% endif %}
+    </div>
+    <button onclick="runSetup()" id="setup-btn"
+            class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md transition-colors flex items-center text-sm">
+        <span id="setup-spinner" class="loading-spinner mr-2 hidden"></span>
+        <span id="setup-text">Initialize</span>
+    </button>
+</div>
+
+<!-- Setup Banner -->
+<div id="setup-banner" class="mb-3 px-4 py-2 rounded-lg text-sm {% if setup_complete %}bg-green-100 text-green-800{% else %}bg-yellow-100 text-yellow-800{% endif %}">
+    {% if setup_complete %}
+    <span class="font-medium">Ready.</span> Dashboard will load automatically.
+    {% else %}
+    <span class="font-medium">Not initialized.</span> Click "Initialize" to load data and charts.
+    {% endif %}
+</div>
+
+<!-- Split Screen Container - Full Width -->
+<div class="flex gap-4" style="height: calc(100vh - 160px);">
+
+    <!-- LEFT: Dashboard Panel -->
+    <div class="w-1/2 bg-white rounded-lg shadow-md overflow-hidden flex flex-col">
+        <!-- Dashboard Header with Filters -->
+        <div class="bg-gray-50 border-b border-gray-200 px-4 py-3 flex-shrink-0">
+            <div class="flex items-center justify-between mb-3">
+                <h2 class="font-semibold text-gray-900">Dashboard</h2>
+                <button onclick="refreshAllCharts()" id="refresh-btn"
+                        class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs flex items-center">
+                    <span id="refresh-spinner" class="loading-spinner mr-1 hidden" style="width:12px;height:12px;"></span>
+                    Refresh All
+                </button>
+            </div>
+
+            <!-- Filter Controls -->
+            <div class="grid grid-cols-4 gap-3 text-sm">
+                <!-- Cluster Selection -->
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Cluster</label>
+                    <select id="filter-cluster" class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm">
+                        <option value="">-- Select --</option>
+                    </select>
+                </div>
+
+                <!-- Colorscale -->
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Colorscale</label>
+                    <select id="filter-colorscale" class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm">
+                        <option value="Viridis" selected>Viridis</option>
+                        <option value="YlOrRd">YlOrRd</option>
+                        <option value="Blues">Blues</option>
+                        <option value="Plasma">Plasma</option>
+                        <option value="Turbo">Turbo</option>
+                    </select>
+                </div>
+
+                <!-- Node Type -->
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Co-oc Type</label>
+                    <select id="filter-node-type" class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm">
+                        <option value="K">Keywords</option>
+                        <option value="TK">Title Words</option>
+                        <option value="A">Authors</option>
+                        <option value="J">Journals</option>
+                        <option value="C">Countries</option>
+                        <option value="I">Institutions</option>
+                    </select>
+                </div>
+
+                <!-- Max Nodes -->
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Max Nodes</label>
+                    <input type="number" id="filter-max-nodes" value="80" min="20" max="300" step="10"
+                           class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm">
+                </div>
+            </div>
+        </div>
+
+        <!-- Charts Container (scrollable) -->
+        <div class="flex-1 overflow-y-auto p-3 space-y-3" id="dashboard-charts">
+            {% for chart in charts_data %}
+            <div class="chart-card border border-gray-200 rounded-lg overflow-hidden" data-chart-type="{{ chart.chart_type }}" data-needs-cluster="{{ chart.needs_cluster|yesno:'true,false' }}">
+                <div class="bg-gray-100 px-3 py-2 border-b flex justify-between items-center">
+                    <span class="font-medium text-sm text-gray-700">{{ chart.title }}</span>
+                    <button onclick="refreshChart('{{ chart.chart_type }}')" class="text-blue-600 hover:text-blue-800 text-xs">Refresh</button>
+                </div>
+                <div class="chart-content" id="chart-{{ chart.chart_type }}" style="min-height: 280px;">
+                    {% if chart.needs_cluster %}
+                    <div class="text-gray-400 text-center py-12 text-sm">Select a cluster first</div>
+                    {% else %}
+                    <div class="text-gray-400 text-center py-12 text-sm">Click Initialize to load</div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- RIGHT: Notebook Cells Panel -->
+    <div class="w-1/2 bg-white rounded-lg shadow-md overflow-hidden flex flex-col">
+        <div class="bg-gray-50 border-b border-gray-200 px-4 py-3 flex-shrink-0">
+            <h2 class="font-semibold text-gray-900">Notebook Cells</h2>
+        </div>
+
+        <div class="flex-1 overflow-y-auto p-3 space-y-3" id="cells-container">
+            {% for item in cells_data %}
+            {% if item.cell.cell_type == 'markdown' %}
+            <!-- Markdown Cell -->
+            <div class="cell-container bg-gray-50 rounded-lg p-3" data-cell-id="{{ item.cell.id }}">
+                <div class="prose prose-sm max-w-none markdown-content text-sm">
+                    {{ item.cell.source_code }}
+                </div>
+            </div>
+            {% else %}
+            <!-- Code Cell -->
+            <div class="cell-container bg-gray-50 rounded-lg overflow-hidden" data-cell-id="{{ item.cell.id }}">
+                <!-- Cell Header -->
+                <div class="px-3 py-2 flex items-center justify-between border-b border-gray-200">
+                    <div class="flex items-center">
+                        <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded mr-2">
+                            {{ item.cell.order|add:1 }}
+                        </span>
+                        <h3 class="font-medium text-sm text-gray-900 truncate" style="max-width: 250px;">
+                            {{ item.cell.title|default:"Untitled" }}
+                        </h3>
+                    </div>
+                    <button onclick="runCell({{ item.cell.id }})"
+                            class="run-btn bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs flex items-center"
+                            data-cell-id="{{ item.cell.id }}">
+                        <span class="cell-spinner loading-spinner mr-1 hidden" style="width:12px;height:12px;"></span>
+                        <span class="btn-text">Run</span>
+                    </button>
+                </div>
+
+                <!-- Parameters Form -->
+                {% if item.has_params %}
+                <div class="px-3 py-2 bg-white border-b border-gray-200">
+                    <div class="grid grid-cols-2 gap-2">
+                        {% for param in item.parameters %}
+                        <div class="param-group">
+                            <label class="block text-xs font-medium text-gray-600 mb-1">{{ param.name }}</label>
+                            {% if param.type == 'dropdown' %}
+                            <select name="{{ param.name }}"
+                                    class="param-input w-full border border-gray-300 rounded px-2 py-1 text-xs"
+                                    data-cell-id="{{ item.cell.id }}"
+                                    data-param-name="{{ param.name }}"
+                                    onchange="runCell({{ item.cell.id }})">
+                                {% for option in param.options %}
+                                <option value="{{ option }}" {% if option == param.value %}selected{% endif %}>{{ option }}</option>
+                                {% endfor %}
+                            </select>
+                            {% elif param.type == 'number' %}
+                            <input type="number" name="{{ param.name }}" value="{{ param.value }}"
+                                   {% if param.min is not None %}min="{{ param.min }}"{% endif %}
+                                   {% if param.max is not None %}max="{{ param.max }}"{% endif %}
+                                   class="param-input w-full border border-gray-300 rounded px-2 py-1 text-xs"
+                                   data-cell-id="{{ item.cell.id }}" data-param-name="{{ param.name }}">
+                            {% elif param.type == 'boolean' %}
+                            <input type="checkbox" name="{{ param.name }}" {% if param.value %}checked{% endif %}
+                                   class="param-input h-4 w-4 text-blue-600 border-gray-300 rounded"
+                                   data-cell-id="{{ item.cell.id }}" data-param-name="{{ param.name }}">
+                            {% else %}
+                            <input type="text" name="{{ param.name }}" value="{{ param.value }}"
+                                   class="param-input w-full border border-gray-300 rounded px-2 py-1 text-xs"
+                                   data-cell-id="{{ item.cell.id }}" data-param-name="{{ param.name }}">
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Output Area -->
+                <div class="output-area hidden" id="output-{{ item.cell.id }}">
+                    <div class="px-3 py-1 bg-gray-100 border-b flex items-center justify-between">
+                        <span class="text-xs font-medium text-gray-600">Output</span>
+                        <span class="execution-time text-xs text-gray-400"></span>
+                    </div>
+                    <div class="output-container p-2 max-h-48 overflow-y-auto">
+                        <div class="output-text text-xs font-mono whitespace-pre-wrap"></div>
+                        <div class="output-html mt-2"></div>
+                        <div class="output-error text-red-600 text-xs font-mono hidden"></div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const notebookSlug = '{{ notebook.slug }}';
+let isSetupComplete = {{ setup_complete|yesno:"true,false" }};
+
+// Chart configurations loaded from server
+const chartsData = {{ charts_data_json|safe }};
+
+// Get current filter values
+function getFilterParams() {
+    return {
+        cluster_id: document.getElementById('filter-cluster').value,
+        colorscale: document.getElementById('filter-colorscale').value,
+        node_type: document.getElementById('filter-node-type').value,
+        max_nodes: parseInt(document.getElementById('filter-max-nodes').value) || 80,
+    };
+}
+
+// Helper function to insert HTML with executable scripts
+function insertHtmlWithScripts(container, htmlString) {
+    container.innerHTML = '';
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = htmlString;
+
+    const scripts = tempDiv.querySelectorAll('script');
+    const scriptContents = [];
+
+    scripts.forEach(script => {
+        scriptContents.push({
+            content: script.textContent,
+            src: script.src,
+            type: script.type || 'text/javascript'
+        });
+        script.remove();
+    });
+
+    container.innerHTML = tempDiv.innerHTML;
+
+    scriptContents.forEach(scriptInfo => {
+        const newScript = document.createElement('script');
+        newScript.type = scriptInfo.type;
+        if (scriptInfo.src) {
+            newScript.src = scriptInfo.src;
+        } else {
+            newScript.textContent = scriptInfo.content;
+        }
+        container.appendChild(newScript);
+    });
+}
+
+// Refresh a single chart
+async function refreshChart(chartType) {
+    const container = document.getElementById(`chart-${chartType}`);
+    if (!container) return;
+
+    const card = container.closest('.chart-card');
+    const needsCluster = card.dataset.needsCluster === 'true';
+    const filters = getFilterParams();
+
+    // Skip if chart needs cluster but none selected
+    if (needsCluster && !filters.cluster_id) {
+        container.innerHTML = '<div class="text-gray-400 text-center py-12 text-sm">Select a cluster first</div>';
+        return;
+    }
+
+    // Get default params from chartsData array
+    const chartConfig = chartsData.find(c => c.chart_type === chartType);
+    const defaultParams = chartConfig ? chartConfig.default_params : {};
+
+    container.innerHTML = '<div class="text-gray-400 text-center py-12 text-sm">Loading...</div>';
+
+    // Merge default params with filter params
+    const params = { ...defaultParams, ...filters };
+
+    try {
+        const response = await fetch(`/dashboard/${notebookSlug}/chart/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                chart_type: chartType,
+                params: params,
+            }),
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            if (data.html) {
+                insertHtmlWithScripts(container, data.html);
+            } else if (data.stdout) {
+                container.innerHTML = '<pre class="text-xs p-2 overflow-auto">' + data.stdout + '</pre>';
+            } else {
+                container.innerHTML = '<div class="text-gray-400 text-center py-8 text-sm">No output</div>';
+            }
+        } else if (data.needs_setup) {
+            container.innerHTML = '<div class="text-yellow-600 text-center py-8 text-sm">Initialize notebook first</div>';
+        } else {
+            container.innerHTML = '<div class="text-red-500 text-center py-4 text-xs p-2">' + (data.error || 'Unknown error') + '</div>';
+        }
+    } catch (error) {
+        container.innerHTML = '<div class="text-red-500 text-center py-4 text-xs">Error: ' + error.message + '</div>';
+    }
+}
+
+// Refresh all charts
+async function refreshAllCharts() {
+    if (!isSetupComplete) {
+        alert('Please initialize the notebook first');
+        return;
+    }
+
+    const btn = document.getElementById('refresh-btn');
+    const spinner = document.getElementById('refresh-spinner');
+    btn.disabled = true;
+    spinner.classList.remove('hidden');
+
+    // Get all chart types from the DOM
+    const chartCards = document.querySelectorAll('.chart-card');
+    for (const card of chartCards) {
+        const chartType = card.dataset.chartType;
+        await refreshChart(chartType);
+    }
+
+    btn.disabled = false;
+    spinner.classList.add('hidden');
+}
+
+// Load cluster options after setup
+async function loadClusterOptions() {
+    try {
+        const response = await fetch('/api/execute/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                code: 'import json; clusters = tyk.list_clusters(show=False); print(json.dumps(clusters))',
+                session_id: 'user_{{ request.user.id }}',
+            }),
+        });
+
+        const data = await response.json();
+        if (data.success && data.output_text) {
+            const clusters = JSON.parse(data.output_text.trim());
+            const select = document.getElementById('filter-cluster');
+
+            select.innerHTML = '<option value="">-- Select --</option>';
+
+            clusters.forEach(([id, name]) => {
+                const option = document.createElement('option');
+                option.value = id;
+                option.textContent = name + ' (' + id + ')';
+                select.appendChild(option);
+            });
+        }
+    } catch (error) {
+        console.error('Failed to load clusters:', error);
+    }
+}
+
+// Run setup
+async function runSetup() {
+    const btn = document.getElementById('setup-btn');
+    const spinner = document.getElementById('setup-spinner');
+    const text = document.getElementById('setup-text');
+    const banner = document.getElementById('setup-banner');
+
+    btn.disabled = true;
+    spinner.classList.remove('hidden');
+    text.textContent = 'Initializing...';
+
+    try {
+        const response = await fetch(`/notebook/${notebookSlug}/setup/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken,
+                'Content-Type': 'application/json',
+            },
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+            banner.className = 'mb-3 px-4 py-2 rounded-lg text-sm bg-green-100 text-green-800';
+            banner.innerHTML = '<span class="font-medium">Ready.</span> Loading dashboard...';
+            text.textContent = 'Ready';
+            isSetupComplete = true;
+
+            await loadClusterOptions();
+            await refreshAllCharts();
+        } else {
+            banner.className = 'mb-3 px-4 py-2 rounded-lg text-sm bg-red-100 text-red-800';
+            banner.innerHTML = '<span class="font-medium">Failed:</span> ' + data.errors.join('; ');
+            text.textContent = 'Retry';
+            btn.disabled = false;
+        }
+    } catch (error) {
+        banner.className = 'mb-3 px-4 py-2 rounded-lg text-sm bg-red-100 text-red-800';
+        banner.innerHTML = '<span class="font-medium">Error:</span> ' + error.message;
+        text.textContent = 'Retry';
+        btn.disabled = false;
+    }
+
+    spinner.classList.add('hidden');
+}
+
+// Run a single cell
+async function runCell(cellId) {
+    const cellContainer = document.querySelector(`[data-cell-id="${cellId}"]`);
+    const btn = cellContainer.querySelector('.run-btn');
+    const spinner = cellContainer.querySelector('.cell-spinner');
+    const btnText = cellContainer.querySelector('.btn-text');
+    const outputArea = document.getElementById(`output-${cellId}`);
+
+    const params = {};
+    cellContainer.querySelectorAll('.param-input').forEach(input => {
+        const name = input.dataset.paramName;
+        if (input.type === 'checkbox') {
+            params[name] = input.checked;
+        } else if (input.type === 'number' || input.type === 'range') {
+            params[name] = parseFloat(input.value);
+        } else {
+            params[name] = input.value;
+        }
+    });
+
+    btn.disabled = true;
+    spinner.classList.remove('hidden');
+    btnText.textContent = '...';
+
+    try {
+        const response = await fetch(`/cell/${cellId}/run/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken,
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ parameters: params }),
+        });
+
+        const data = await response.json();
+
+        outputArea.classList.remove('hidden');
+        const outputText = outputArea.querySelector('.output-text');
+        const outputHtml = outputArea.querySelector('.output-html');
+        const outputError = outputArea.querySelector('.output-error');
+        const execTime = outputArea.querySelector('.execution-time');
+
+        outputText.textContent = '';
+        outputHtml.innerHTML = '';
+        outputError.classList.add('hidden');
+
+        if (data.success) {
+            if (data.output_text) outputText.textContent = data.output_text;
+            if (data.output_html) insertHtmlWithScripts(outputHtml, data.output_html);
+            execTime.textContent = data.execution_time.toFixed(2) + 's';
+        } else {
+            outputError.classList.remove('hidden');
+            outputError.textContent = data.error;
+        }
+    } catch (error) {
+        outputArea.classList.remove('hidden');
+        outputArea.querySelector('.output-error').classList.remove('hidden');
+        outputArea.querySelector('.output-error').textContent = error.message;
+    }
+
+    btn.disabled = false;
+    spinner.classList.add('hidden');
+    btnText.textContent = 'Run';
+}
+
+// Reset session
+async function resetSession() {
+    if (!confirm('Reset the notebook session?')) return;
+
+    try {
+        await fetch(`/notebook/${notebookSlug}/reset/`, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrftoken },
+        });
+        window.location.reload();
+    } catch (error) {
+        alert('Failed to reset: ' + error.message);
+    }
+}
+
+// Filter change handlers
+document.getElementById('filter-cluster').addEventListener('change', () => {
+    // Refresh cluster-dependent charts
+    document.querySelectorAll('.chart-card[data-needs-cluster="true"]').forEach(card => {
+        refreshChart(card.dataset.chartType);
+    });
+});
+
+document.getElementById('filter-colorscale').addEventListener('change', () => {
+    refreshChart('world_map');
+});
+
+document.getElementById('filter-node-type').addEventListener('change', () => {
+    refreshChart('cooc_network');
+});
+
+document.getElementById('filter-max-nodes').addEventListener('change', () => {
+    refreshChart('cooc_network');
+});
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Render markdown
+    document.querySelectorAll('.markdown-content').forEach(el => {
+        el.innerHTML = marked.parse(el.textContent);
+    });
+
+    if (isSetupComplete) {
+        loadClusterOptions();
+        refreshAllCharts();
+    }
+});
+</script>
+{% endblock %}
