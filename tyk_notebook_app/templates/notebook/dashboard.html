@@ -1,16 +1,19 @@
 {% extends "notebook/base.html" %}
+{% load i18n %}
 
-{% block title %}{{ notebook.name }} - Dashboard{% endblock %}
+{% block title %}{{ notebook.name }} - {% trans "Dashboard" %}{% endblock %}
+
+{% block nav_container_class %}w-full{% endblock %}
 
 {% block nav_extra %}
 <a href="{% url 'notebook:detail' notebook.slug %}" class="text-gray-600 hover:text-blue-600 text-sm mr-4">
-    Classic View
+    {% trans "Classic View" %}
 </a>
 <a href="{% url 'notebook:history' notebook.slug %}" class="text-gray-600 hover:text-blue-600 text-sm mr-4" target="_blank">
-    History
+    {% trans "History" %}
 </a>
 <button onclick="resetSession()" class="text-gray-600 hover:text-red-600 text-sm">
-    Reset
+    {% trans "Reset" %}
 </button>
 {% endblock %}
 
@@ -30,16 +33,16 @@
     <button onclick="runSetup()" id="setup-btn"
             class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md transition-colors flex items-center text-sm">
         <span id="setup-spinner" class="loading-spinner mr-2 hidden"></span>
-        <span id="setup-text">Initialize</span>
+        <span id="setup-text">{% trans "Initialize" %}</span>
     </button>
 </div>
 
 <!-- Setup Banner -->
 <div id="setup-banner" class="mb-3 px-4 py-2 rounded-lg text-sm {% if setup_complete %}bg-green-100 text-green-800{% else %}bg-yellow-100 text-yellow-800{% endif %}">
     {% if setup_complete %}
-    <span class="font-medium">Ready.</span> Dashboard will load automatically.
+    <span class="font-medium">{% trans "Ready." %}</span> {% trans "Dashboard will load automatically." %}
     {% else %}
-    <span class="font-medium">Not initialized.</span> Click "Initialize" to load data and charts.
+    <span class="font-medium">{% trans "Not initialized." %}</span> {% trans "Click \"Initialize\" to load data and charts." %}
     {% endif %}
 </div>
 
@@ -51,11 +54,11 @@
         <!-- Dashboard Header with Filters -->
         <div class="bg-gray-50 border-b border-gray-200 px-4 py-3 flex-shrink-0">
             <div class="flex items-center justify-between mb-3">
-                <h2 class="font-semibold text-gray-900">Dashboard</h2>
+                <h2 class="font-semibold text-gray-900">{% trans "Dashboard" %}</h2>
                 <button onclick="refreshAllCharts()" id="refresh-btn"
                         class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs flex items-center">
                     <span id="refresh-spinner" class="loading-spinner mr-1 hidden" style="width:12px;height:12px;"></span>
-                    Refresh All
+                    {% trans "Refresh All" %}
                 </button>
             </div>
 
@@ -63,15 +66,15 @@
             <div class="grid grid-cols-4 gap-3 text-sm">
                 <!-- Cluster Selection -->
                 <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-1">Cluster</label>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">{% trans "Cluster" %}</label>
                     <select id="filter-cluster" class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm">
-                        <option value="">-- Select --</option>
+                        <option value="">-- {% trans "Select" %} --</option>
                     </select>
                 </div>
 
                 <!-- Colorscale -->
                 <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-1">Colorscale</label>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">{% trans "Colorscale" %}</label>
                     <select id="filter-colorscale" class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm">
                         <option value="Viridis" selected>Viridis</option>
                         <option value="YlOrRd">YlOrRd</option>
@@ -83,20 +86,20 @@
 
                 <!-- Node Type -->
                 <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-1">Co-oc Type</label>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">{% trans "Co-oc Type" %}</label>
                     <select id="filter-node-type" class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm">
-                        <option value="K">Keywords</option>
-                        <option value="TK">Title Words</option>
-                        <option value="A">Authors</option>
-                        <option value="J">Journals</option>
-                        <option value="C">Countries</option>
-                        <option value="I">Institutions</option>
+                        <option value="K">{% trans "Keywords" %}</option>
+                        <option value="TK">{% trans "Title Words" %}</option>
+                        <option value="A">{% trans "Authors" %}</option>
+                        <option value="J">{% trans "Journals" %}</option>
+                        <option value="C">{% trans "Countries" %}</option>
+                        <option value="I">{% trans "Institutions" %}</option>
                     </select>
                 </div>
 
                 <!-- Max Nodes -->
                 <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-1">Max Nodes</label>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">{% trans "Max Nodes" %}</label>
                     <input type="number" id="filter-max-nodes" value="80" min="20" max="300" step="10"
                            class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm">
                 </div>
@@ -109,13 +112,13 @@
             <div class="chart-card border border-gray-200 rounded-lg overflow-hidden" data-chart-type="{{ chart.chart_type }}" data-needs-cluster="{{ chart.needs_cluster|yesno:'true,false' }}">
                 <div class="bg-gray-100 px-3 py-2 border-b flex justify-between items-center">
                     <span class="font-medium text-sm text-gray-700">{{ chart.title }}</span>
-                    <button onclick="refreshChart('{{ chart.chart_type }}')" class="text-blue-600 hover:text-blue-800 text-xs">Refresh</button>
+                    <button onclick="refreshChart('{{ chart.chart_type }}')" class="text-blue-600 hover:text-blue-800 text-xs">{% trans "Refresh" %}</button>
                 </div>
                 <div class="chart-content" id="chart-{{ chart.chart_type }}" style="min-height: 280px;">
                     {% if chart.needs_cluster %}
-                    <div class="text-gray-400 text-center py-12 text-sm">Select a cluster first</div>
+                    <div class="text-gray-400 text-center py-12 text-sm">{% trans "Select a cluster first" %}</div>
                     {% else %}
-                    <div class="text-gray-400 text-center py-12 text-sm">Click Initialize to load</div>
+                    <div class="text-gray-400 text-center py-12 text-sm">{% trans "Click Initialize to load" %}</div>
                     {% endif %}
                 </div>
             </div>
@@ -126,7 +129,7 @@
     <!-- RIGHT: Notebook Cells Panel -->
     <div class="w-1/2 bg-white rounded-lg shadow-md overflow-hidden flex flex-col">
         <div class="bg-gray-50 border-b border-gray-200 px-4 py-3 flex-shrink-0">
-            <h2 class="font-semibold text-gray-900">Notebook Cells</h2>
+            <h2 class="font-semibold text-gray-900">{% trans "Notebook Cells" %}</h2>
         </div>
 
         <div class="flex-1 overflow-y-auto p-3 space-y-3" id="cells-container">
@@ -155,7 +158,7 @@
                             class="run-btn bg-blue-600 hover:bg-blue-700 text-white px-2 py-1 rounded text-xs flex items-center"
                             data-cell-id="{{ item.cell.id }}">
                         <span class="cell-spinner loading-spinner mr-1 hidden" style="width:12px;height:12px;"></span>
-                        <span class="btn-text">Run</span>
+                        <span class="btn-text">{% trans "Run" %}</span>
                     </button>
                 </div>
 
@@ -200,7 +203,7 @@
                 <!-- Output Area -->
                 <div class="output-area hidden" id="output-{{ item.cell.id }}">
                     <div class="px-3 py-1 bg-gray-100 border-b flex items-center justify-between">
-                        <span class="text-xs font-medium text-gray-600">Output</span>
+                        <span class="text-xs font-medium text-gray-600">{% trans "Output" %}</span>
                         <span class="execution-time text-xs text-gray-400"></span>
                     </div>
                     <div class="output-container p-2 max-h-48 overflow-y-auto">

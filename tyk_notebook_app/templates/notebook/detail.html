@@ -1,13 +1,14 @@
 {% extends "notebook/base.html" %}
+{% load i18n %}
 
-{% block title %}{{ notebook.name }} - TyK Notebook{% endblock %}
+{% block title %}{{ notebook.name }} - {% trans "TyK Notebook" %}{% endblock %}
 
 {% block nav_extra %}
 <a href="{% url 'notebook:history' notebook.slug %}" class="text-gray-600 hover:text-blue-600 text-sm mr-4" target="_blank">
-    Execution Log
+    {% trans "Execution Log" %}
 </a>
 <button onclick="resetSession()" class="text-gray-600 hover:text-red-600 text-sm">
-    Reset Session
+    {% trans "Reset Session" %}
 </button>
 {% endblock %}
 
@@ -24,7 +25,7 @@
             <button onclick="runSetup()" id="setup-btn"
                     class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md transition-colors flex items-center">
                 <span id="setup-spinner" class="loading-spinner mr-2 hidden"></span>
-                <span id="setup-text">Initialize Notebook</span>
+                <span id="setup-text">{% trans "Initialize Notebook" %}</span>
             </button>
         </div>
     </div>
@@ -33,30 +34,30 @@
 <!-- Setup status banner -->
 <div id="setup-banner" class="mb-6 p-4 rounded-lg {% if setup_complete %}bg-green-100 text-green-800{% else %}bg-yellow-100 text-yellow-800{% endif %}">
     {% if setup_complete %}
-    <span class="font-medium">Notebook initialized.</span> You can now run cells.
+    <span class="font-medium">{% trans "Notebook initialized." %}</span> {% trans "You can now run cells." %}
     {% else %}
-    <span class="font-medium">Notebook not initialized.</span> Click "Initialize Notebook" to set up the environment before running cells.
+    <span class="font-medium">{% trans "Notebook not initialized." %}</span> {% trans "Click \"Initialize Notebook\" to set up the environment before running cells." %}
     {% endif %}
 </div>
 
 <!-- Debugging Help -->
 <details class="mb-6 bg-blue-50 border border-blue-200 rounded-lg">
     <summary class="px-4 py-3 cursor-pointer text-blue-900 font-medium hover:bg-blue-100">
-        🔍 Debugging Tools Available
+        {% trans "Debugging Tools Available" %}
     </summary>
     <div class="px-4 pb-4 text-sm text-gray-700">
-        <p class="mb-2"><strong>Interactive Debugger:</strong></p>
-        <pre class="bg-white p-2 rounded border mb-3"><code>set_trace()  # Pause execution, open web debugger</code></pre>
+        <p class="mb-2"><strong>{% trans "Interactive Debugger:" %}</strong></p>
+        <pre class="bg-white p-2 rounded border mb-3"><code>set_trace()  # {% trans "Pause execution, open web debugger" %}</code></pre>
 
-        <p class="mb-2"><strong>Quick Helpers:</strong></p>
-        <pre class="bg-white p-2 rounded border"><code>debug(x, y, z)       # Inspect variables
-inspect_obj(obj)     # Show object details
-vars_dump()          # List all variables
-trace("message")     # Timestamped log
-trace_log()          # Show all traces</code></pre>
+        <p class="mb-2"><strong>{% trans "Quick Helpers:" %}</strong></p>
+        <pre class="bg-white p-2 rounded border"><code>debug(x, y, z)       # {% trans "Inspect variables" %}
+inspect_obj(obj)     # {% trans "Show object details" %}
+vars_dump()          # {% trans "List all variables" %}
+trace("message")     # {% trans "Timestamped log" %}
+trace_log()          # {% trans "Show all traces" %}</code></pre>
 
         <p class="mt-2 text-xs text-gray-600">
-            Requires: <code>pip install web-pdb</code>
+            {% trans "Requires:" %} <code>pip install web-pdb</code>
         </p>
     </div>
 </details>
@@ -81,17 +82,17 @@ trace_log()          # Show all traces</code></pre>
                     {{ item.cell.order|add:1 }}
                 </span>
                 <h3 class="font-semibold text-gray-900">
-                    {{ item.cell.title|default:"Untitled Cell" }}
+                    {{ item.cell.title|default:_("Untitled Cell") }}
                 </h3>
                 {% if item.cell.auto_run %}
-                <span class="ml-2 bg-purple-100 text-purple-800 text-xs px-2 py-0.5 rounded">auto-run</span>
+                <span class="ml-2 bg-purple-100 text-purple-800 text-xs px-2 py-0.5 rounded">{% trans "auto-run" %}</span>
                 {% endif %}
             </div>
             <button onclick="runCell({{ item.cell.id }})"
                     class="run-btn bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded text-sm transition-colors flex items-center"
                     data-cell-id="{{ item.cell.id }}">
                 <span class="cell-spinner loading-spinner mr-2 hidden"></span>
-                <span class="btn-text">Run</span>
+                <span class="btn-text">{% trans "Run" %}</span>
             </button>
         </div>
 
@@ -179,7 +180,7 @@ trace_log()          # Show all traces</code></pre>
         <!-- Output Area -->
         <div class="output-area hidden" id="output-{{ item.cell.id }}">
             <div class="px-4 py-2 bg-gray-100 border-b border-gray-200 flex items-center justify-between">
-                <span class="text-sm font-medium text-gray-700">Output</span>
+                <span class="text-sm font-medium text-gray-700">{% trans "Output" %}</span>
                 <span class="execution-time text-xs text-gray-500"></span>
             </div>
             <div class="output-container p-4">
@@ -193,7 +194,7 @@ trace_log()          # Show all traces</code></pre>
         <details class="border-b border-gray-200">
             <hr>
             <summary class="px-4 py-2 bg-gray-50 cursor-pointer text-sm text-gray-600 hover:bg-gray-100">
-                View Code
+                {% trans "View Code" %}
             </summary>
             <div class="p-4 bg-gray-900">
                 <pre class="code-block text-sm"><code class="language-python">{{ item.cell.source_code }}</code></pre>

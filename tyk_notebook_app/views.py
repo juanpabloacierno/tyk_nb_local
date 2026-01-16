@@ -364,10 +364,10 @@ def dashboard_detail(request, slug):
     else:
         charts_data = [
             {
-                'chart_type': chart.chart_type,
+                'chart_type': chart.chart_type.key,
                 'title': chart.get_title(),
                 'default_params': chart.default_params or {},
-                'needs_cluster': chart.chart_type in ('subclusters_network', 'cluster_stats'),
+                'needs_cluster': chart.chart_type.key in ('subclusters_network', 'cluster_stats'),
             }
             for chart in dashboard_charts
         ]

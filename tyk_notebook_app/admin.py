@@ -4,6 +4,12 @@ Django Admin configuration for TyK Notebook Application.
 import os
 import tempfile
 from django.contrib import admin
+from django.utils.translation import gettext_lazy as _
+
+# Customize admin site headers
+admin.site.site_header = _("TyK Tools Administration")
+admin.site.site_title = _("TyK Tools Admin")
+admin.site.index_title = _("Welcome to TyK Tools Administration")
 from django.contrib import messages
 from django.utils.html import format_html
 from django.urls import reverse, path
@@ -11,7 +17,7 @@ from django.shortcuts import render, redirect
 from django.http import HttpResponseRedirect
 from django import forms
 from django.utils.safestring import mark_safe
-from .models import Notebook, Cell, Parameter, Execution, NotebookSession, DashboardChart
+from .models import Notebook, Cell, Parameter, Execution, NotebookSession, ChartType, DashboardChart
 from .importer import import_notebook
 
 
@@ -421,12 +427,27 @@ class NotebookSessionAdmin(admin.ModelAdmin):
         return False
 
 
+@admin.register(ChartType)
+class ChartTypeAdmin(admin.ModelAdmin):
+    """Admin for Chart Types"""
+    list_display = ['key', 'name', 'is_active', 'created_at']
+    list_filter = ['is_active']
+    search_fields = ['key', 'name', 'description']
+    ordering = ['name']
+
+    fieldsets = (
+        (None, {
+            'fields': ('key', 'name', 'description', 'is_active')
+        }),
+    )
+
+
 @admin.register(DashboardChart)
 class DashboardChartAdmin(admin.ModelAdmin):
     """Admin for Dashboard Charts"""
     list_display = ['notebook', 'chart_type', 'title', 'order', 'is_active']
     list_filter = ['notebook', 'chart_type', 'is_active']
-    search_fields = ['notebook__name', 'title']
+    search_fields = ['notebook__name', 'title', 'chart_type__name']
     ordering = ['notebook', 'order']
 
     fieldsets = (

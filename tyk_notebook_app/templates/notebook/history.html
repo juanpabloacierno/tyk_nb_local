@@ -1,17 +1,18 @@
 {% extends "notebook/base.html" %}
+{% load i18n %}
 
-{% block title %}Execution History - {{ notebook.name }}{% endblock %}
+{% block title %}{% trans "Execution History" %} - {{ notebook.name }}{% endblock %}
 
 {% block content %}
 <div class="mb-6">
     <div class="flex items-center justify-between">
         <div>
-            <h1 class="text-2xl font-bold text-gray-900">Execution History</h1>
+            <h1 class="text-2xl font-bold text-gray-900">{% trans "Execution History" %}</h1>
             <p class="mt-1 text-gray-600">{{ notebook.name }}</p>
         </div>
         <a href="{% url 'notebook:detail' notebook.slug %}"
            class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md transition-colors">
-            Back to Notebook
+            {% trans "Back to Notebook" %}
         </a>
     </div>
 </div>
@@ -21,11 +22,11 @@
     <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
             <tr>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cell</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Parameters</th>
-                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Executed</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{% trans "Cell" %}</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{% trans "Status" %}</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{% trans "Time" %}</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{% trans "Parameters" %}</th>
+                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">{% trans "Executed" %}</th>
             </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
@@ -33,9 +34,9 @@
             <tr class="hover:bg-gray-50">
                 <td class="px-6 py-4 whitespace-nowrap">
                     <div class="text-sm font-medium text-gray-900">
-                        {{ execution.cell.title|default:"Untitled" }}
+                        {{ execution.cell.title|default:_("Untitled") }}
                     </div>
-                    <div class="text-sm text-gray-500">Cell #{{ execution.cell.order|add:1 }}</div>
+                    <div class="text-sm text-gray-500">{% trans "Cell" %} #{{ execution.cell.order|add:1 }}</div>
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap">
                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
@@ -57,11 +58,11 @@
                     {% if execution.parameters %}
                     <code class="text-xs">{{ execution.parameters }}</code>
                     {% else %}
-                    <span class="text-gray-400">None</span>
+                    <span class="text-gray-400">{% trans "None" %}</span>
                     {% endif %}
                 </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {{ execution.created_at|timesince }} ago
+                    {% blocktrans with time=execution.created_at|timesince %}{{ time }} ago{% endblocktrans %}
                 </td>
             </tr>
             {% endfor %}
@@ -70,7 +71,7 @@
 </div>
 {% else %}
 <div class="bg-white rounded-lg shadow-md p-8 text-center">
-    <p class="text-gray-600">No execution history available.</p>
+    <p class="text-gray-600">{% trans "No execution history available." %}</p>
 </div>
 {% endif %}
 {% endblock %}

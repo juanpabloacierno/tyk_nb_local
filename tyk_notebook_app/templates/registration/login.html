@@ -1,7 +1,8 @@
 {% extends "registration/base_auth.html" %}
+{% load i18n %}
 
-{% block title %}Login - TyK Notebook{% endblock %}
-{% block subtitle %}Sign in to your account{% endblock %}
+{% block title %}{% trans "Login" %} - {% trans "TyK Notebook" %}{% endblock %}
+{% block subtitle %}{% trans "Sign in to your account" %}{% endblock %}
 
 {% block content %}
 <form method="post" class="space-y-6">
@@ -15,7 +16,7 @@
 
     <div>
         <label for="{{ form.username.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
-            Username
+            {% trans "Username" %}
         </label>
         <input type="text"
                name="{{ form.username.name }}"
@@ -30,7 +31,7 @@
 
     <div>
         <label for="{{ form.password.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-1">
-            Password
+            {% trans "Password" %}
         </label>
         <input type="password"
                name="{{ form.password.name }}"
@@ -45,7 +46,7 @@
     <div>
         <button type="submit"
                 class="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-md transition-colors">
-            Sign In
+            {% trans "Sign In" %}
         </button>
     </div>
 </form>
@@ -53,6 +54,6 @@
 
 {% block footer_links %}
 <a href="{% url 'password_reset' %}" class="text-blue-600 hover:text-blue-800">
-    Forgot your password?
+    {% trans "Forgot your password?" %}
 </a>
 {% endblock %}

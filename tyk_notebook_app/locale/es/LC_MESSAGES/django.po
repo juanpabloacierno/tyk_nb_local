@@ -1,0 +1,366 @@
+# Spanish translations for TyK Notebook.
+# Copyright (C) 2024
+# This file is distributed under the same license as the TyK Notebook package.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: TyK Notebook 1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2024-01-01 00:00+0000\n"
+"PO-Revision-Date: 2024-01-01 00:00+0000\n"
+"Last-Translator: \n"
+"Language-Team: Spanish\n"
+"Language: es\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+# Settings - Languages
+msgid "English"
+msgstr "Inglés"
+
+msgid "Spanish"
+msgstr "Español"
+
+# Admin site headers
+msgid "TyK Tools Administration"
+msgstr "Administración de TyK Tools"
+
+msgid "TyK Tools Admin"
+msgstr "Admin TyK Tools"
+
+msgid "Welcome to TyK Tools Administration"
+msgstr "Bienvenido a la Administración de TyK Tools"
+
+# Base template - Navigation
+msgid "TyK Notebook"
+msgstr "TyK Notebook"
+
+msgid "Notebook"
+msgstr "Cuaderno"
+
+msgid "Admin"
+msgstr "Admin"
+
+msgid "Welcome,"
+msgstr "Bienvenido,"
+
+msgid "Logout"
+msgstr "Cerrar sesión"
+
+# Base template - Footer
+msgid "TyK Notebook Application"
+msgstr "Aplicación TyK Notebook"
+
+msgid "Interactive Data Analysis"
+msgstr "Análisis de Datos Interactivo"
+
+# List page
+msgid "Notebooks"
+msgstr "Cuadernos"
+
+msgid "Available Notebooks"
+msgstr "Cuadernos Disponibles"
+
+msgid "Select a notebook to start interactive analysis"
+msgstr "Selecciona un cuaderno para iniciar el análisis interactivo"
+
+#, python-format
+msgid "%(counter)s cell"
+msgid_plural "%(counter)s cells"
+msgstr[0] "%(counter)s celda"
+msgstr[1] "%(counter)s celdas"
+
+#, python-format
+msgid "Updated %(time)s ago"
+msgstr "Actualizado hace %(time)s"
+
+msgid "No description available"
+msgstr "Sin descripción disponible"
+
+msgid "Open Dashboard View"
+msgstr "Abrir Vista de Dashboard"
+
+msgid "Dashboard"
+msgstr "Dashboard"
+
+msgid "Open Classic View"
+msgstr "Abrir Vista Clásica"
+
+msgid "History"
+msgstr "Historial"
+
+msgid "Export as .py file"
+msgstr "Exportar como archivo .py"
+
+msgid "No notebooks available"
+msgstr "No hay cuadernos disponibles"
+
+msgid "Import a notebook using the admin interface to get started."
+msgstr "Importa un cuaderno usando la interfaz de administración para comenzar."
+
+msgid "Go to Admin"
+msgstr "Ir a Admin"
+
+# Detail page
+msgid "Execution Log"
+msgstr "Registro de Ejecución"
+
+msgid "Reset Session"
+msgstr "Reiniciar Sesión"
+
+msgid "Initialize Notebook"
+msgstr "Inicializar Cuaderno"
+
+msgid "Notebook initialized."
+msgstr "Cuaderno inicializado."
+
+msgid "You can now run cells."
+msgstr "Ahora puedes ejecutar celdas."
+
+msgid "Notebook not initialized."
+msgstr "Cuaderno no inicializado."
+
+msgid "Click \"Initialize Notebook\" to set up the environment before running cells."
+msgstr "Haz clic en \"Inicializar Cuaderno\" para configurar el entorno antes de ejecutar celdas."
+
+msgid "Debugging Tools Available"
+msgstr "Herramientas de Depuración Disponibles"
+
+msgid "Interactive Debugger:"
+msgstr "Depurador Interactivo:"
+
+msgid "Pause execution, open web debugger"
+msgstr "Pausar ejecución, abrir depurador web"
+
+msgid "Quick Helpers:"
+msgstr "Ayudantes Rápidos:"
+
+msgid "Inspect variables"
+msgstr "Inspeccionar variables"
+
+msgid "Show object details"
+msgstr "Mostrar detalles del objeto"
+
+msgid "List all variables"
+msgstr "Listar todas las variables"
+
+msgid "Timestamped log"
+msgstr "Log con marca de tiempo"
+
+msgid "Show all traces"
+msgstr "Mostrar todos los traces"
+
+msgid "Requires:"
+msgstr "Requiere:"
+
+msgid "Untitled Cell"
+msgstr "Celda Sin Título"
+
+msgid "auto-run"
+msgstr "auto-ejecutar"
+
+msgid "Run"
+msgstr "Ejecutar"
+
+msgid "Output"
+msgstr "Salida"
+
+msgid "View Code"
+msgstr "Ver Código"
+
+# Dashboard page
+msgid "Classic View"
+msgstr "Vista Clásica"
+
+msgid "Reset"
+msgstr "Reiniciar"
+
+msgid "Initialize"
+msgstr "Inicializar"
+
+msgid "Ready."
+msgstr "Listo."
+
+msgid "Dashboard will load automatically."
+msgstr "El dashboard se cargará automáticamente."
+
+msgid "Not initialized."
+msgstr "No inicializado."
+
+msgid "Click \"Initialize\" to load data and charts."
+msgstr "Haz clic en \"Inicializar\" para cargar datos y gráficos."
+
+msgid "Refresh All"
+msgstr "Actualizar Todo"
+
+msgid "Cluster"
+msgstr "Cluster"
+
+msgid "Select"
+msgstr "Seleccionar"
+
+msgid "Colorscale"
+msgstr "Escala de Color"
+
+msgid "Co-oc Type"
+msgstr "Tipo Co-oc"
+
+msgid "Keywords"
+msgstr "Palabras Clave"
+
+msgid "Title Words"
+msgstr "Palabras del Título"
+
+msgid "Authors"
+msgstr "Autores"
+
+msgid "Journals"
+msgstr "Revistas"
+
+msgid "Countries"
+msgstr "Países"
+
+msgid "Institutions"
+msgstr "Instituciones"
+
+msgid "Max Nodes"
+msgstr "Máx. Nodos"
+
+msgid "Refresh"
+msgstr "Actualizar"
+
+msgid "Select a cluster first"
+msgstr "Selecciona un cluster primero"
+
+msgid "Click Initialize to load"
+msgstr "Haz clic en Inicializar para cargar"
+
+msgid "Notebook Cells"
+msgstr "Celdas del Cuaderno"
+
+# History page
+msgid "Execution History"
+msgstr "Historial de Ejecución"
+
+msgid "Back to Notebook"
+msgstr "Volver al Cuaderno"
+
+msgid "Cell"
+msgstr "Celda"
+
+msgid "Status"
+msgstr "Estado"
+
+msgid "Time"
+msgstr "Tiempo"
+
+msgid "Parameters"
+msgstr "Parámetros"
+
+msgid "Executed"
+msgstr "Ejecutado"
+
+msgid "Untitled"
+msgstr "Sin Título"
+
+msgid "None"
+msgstr "Ninguno"
+
+#, python-format
+msgid "%(time)s ago"
+msgstr "hace %(time)s"
+
+msgid "No execution history available."
+msgstr "No hay historial de ejecución disponible."
+
+# Login page
+msgid "Login"
+msgstr "Iniciar Sesión"
+
+msgid "Sign in to your account"
+msgstr "Inicia sesión en tu cuenta"
+
+msgid "Username"
+msgstr "Usuario"
+
+msgid "Password"
+msgstr "Contraseña"
+
+msgid "Sign In"
+msgstr "Iniciar Sesión"
+
+msgid "Forgot your password?"
+msgstr "¿Olvidaste tu contraseña?"
+
+# Logged out page
+msgid "Logged Out"
+msgstr "Sesión Cerrada"
+
+msgid "You have been logged out"
+msgstr "Has cerrado sesión"
+
+msgid "You have successfully logged out of your account."
+msgstr "Has cerrado sesión de tu cuenta exitosamente."
+
+msgid "Sign In Again"
+msgstr "Iniciar Sesión de Nuevo"
+
+# Password reset pages
+msgid "Reset Password"
+msgstr "Restablecer Contraseña"
+
+msgid "Reset your password"
+msgstr "Restablece tu contraseña"
+
+msgid "Enter your email address and we'll send you instructions to reset your password."
+msgstr "Ingresa tu dirección de correo electrónico y te enviaremos instrucciones para restablecer tu contraseña."
+
+msgid "Email Address"
+msgstr "Dirección de Correo"
+
+msgid "Send Reset Link"
+msgstr "Enviar Enlace de Restablecimiento"
+
+msgid "Back to login"
+msgstr "Volver al inicio de sesión"
+
+msgid "Password Reset Sent"
+msgstr "Restablecimiento de Contraseña Enviado"
+
+msgid "Check your email"
+msgstr "Revisa tu correo"
+
+msgid "We've sent you an email with instructions to reset your password. Please check your inbox and follow the link."
+msgstr "Te hemos enviado un correo con instrucciones para restablecer tu contraseña. Por favor revisa tu bandeja de entrada y sigue el enlace."
+
+msgid "If you don't receive an email within a few minutes, please check your spam folder."
+msgstr "Si no recibes un correo en unos minutos, por favor revisa tu carpeta de spam."
+
+msgid "Set New Password"
+msgstr "Establecer Nueva Contraseña"
+
+msgid "Choose a new password"
+msgstr "Elige una nueva contraseña"
+
+msgid "New Password"
+msgstr "Nueva Contraseña"
+
+msgid "Confirm New Password"
+msgstr "Confirmar Nueva Contraseña"
+
+msgid "This password reset link is invalid or has expired."
+msgstr "Este enlace de restablecimiento de contraseña es inválido o ha expirado."
+
+msgid "Request New Reset Link"
+msgstr "Solicitar Nuevo Enlace de Restablecimiento"
+
+msgid "Password Reset Complete"
+msgstr "Restablecimiento de Contraseña Completado"
+
+msgid "Success!"
+msgstr "¡Éxito!"
+
+msgid "Your password has been reset successfully!"
+msgstr "¡Tu contraseña ha sido restablecida exitosamente!"

@@ -1,9 +1,10 @@
+{% load i18n %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="{{ LANGUAGE_CODE }}">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}TyK Notebook{% endblock %}</title>
+    <title>{% block title %}{% trans "TyK Notebook" %}{% endblock %}</title>
 
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -77,26 +78,41 @@
 <body class="bg-gray-100 min-h-screen">
     <!-- Navigation -->
     <nav class="bg-white shadow-sm border-b border-gray-200">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="{% block nav_container_class %}max-w-7xl mx-auto{% endblock %} px-4 sm:px-6 lg:px-8">
             <div class="flex justify-between h-16">
                 <div class="flex items-center">
                     <a href="{% url 'notebook:list' %}" class="flex items-center">
                         <span class="text-2xl font-bold text-blue-600">TyK</span>
-                        <span class="ml-2 text-gray-600">Notebook</span>
+                        <span class="ml-2 text-gray-600">{% trans "Notebook" %}</span>
                     </a>
                 </div>
                 <div class="flex items-center space-x-4">
+                    <!-- Language Switcher -->
+                    <form action="{% url 'set_language' %}" method="post" class="flex items-center">
+                        {% csrf_token %}
+                        <input name="next" type="hidden" value="{{ request.path }}">
+                        <select name="language" onchange="this.form.submit()"
+                                class="text-sm border-gray-300 rounded-md py-1 px-2 bg-gray-50 hover:bg-gray-100 cursor-pointer">
+                            {% get_current_language as LANGUAGE_CODE %}
+                            {% get_available_languages as LANGUAGES %}
+                            {% for lang_code, lang_name in LANGUAGES %}
+                            <option value="{{ lang_code }}" {% if lang_code == LANGUAGE_CODE %}selected{% endif %}>
+                                {{ lang_name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </form>
                     <a href="{% url 'admin:index' %}" class="text-gray-600 hover:text-gray-900">
-                        Admin
+                        {% trans "Admin" %}
                     </a>
                     {% block nav_extra %}{% endblock %}
                     {% if user.is_authenticated %}
                     <span class="text-sm text-gray-600">
-                        Welcome, <strong>{{ user.username }}</strong>
+                        {% trans "Welcome," %} <strong>{{ user.username }}</strong>
                     </span>
                     <a href="{% url 'logout' %}"
                        class="bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded-md text-sm transition-colors">
-                        Logout
+                        {% trans "Logout" %}
                     </a>
                     {% endif %}
                 </div>
@@ -112,7 +128,7 @@
     <!-- Footer -->
     <footer class="bg-white border-t border-gray-200 mt-auto">
         <div class="max-w-7xl mx-auto py-4 px-4 text-center text-gray-500 text-sm">
-            TyK Notebook Application &mdash; Interactive Data Analysis
+            {% trans "TyK Notebook Application" %} &mdash; {% trans "Interactive Data Analysis" %}
         </div>
     </footer>
 
