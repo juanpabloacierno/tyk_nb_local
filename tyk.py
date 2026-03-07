@@ -1346,9 +1346,9 @@ class TyK:
             "Elegí un <b>TOP</b> por <b>ID</b> o por <b>Nombre</b> donde corresponda."
             if level == "TOP"
             else ("Elegí un <b>SUB</b> por <b>ID</b> o <b>Nombre</b> para visualizar."
-                  if top_id else "Indicá primero un <b>TOP</b> para filtrar sus subclusters.")
+                  if top_id else "Indique primero un <b>TOP</b> para filtrar sus subclusters.")
         )
-        self._notify(hint, "info")
+        # self._notify(hint, "info")
         display(HTML(html))
 
     def get_cluster(self, cluster_id: str) -> Dict[str, Any]:
@@ -1384,7 +1384,7 @@ class TyK:
         show_colorbar: bool = True,   # muestra una leyenda tipo colorbar (min↔max)
         scaling_min: int = 8,          # tamaño mínimo de nodo (px)
         scaling_max: int = 36,          # tamaño máximo de nodo (px)  ← ¡subido!
-        height_px: int = 480 ,           # alto del canvas
+        height_px: int = 680 ,           # alto del canvas
         mode: str = "auto",          # <-- NUEVO: "auto" | "inline" | "browser"
         outfile: Optional[str] = None,  # <-- NUEVO: ruta opcional para guardar
         open_in_browser: bool = True,    # <-- NUEVO: abrir automáticamente
@@ -1502,12 +1502,12 @@ class TyK:
 
         html = f"""
         <div style="font-family:sans-serif;margin:6px 0 10px 0;font-weight:600">{title}</div>
+        {panel_html}
         <div style="position:relative;">
           <div id="{div_id}" style="width:100%; height:{height_px}px; border:1px solid #e1e5ea; border-radius:8px; background-color:white;"></div>
           {colorbar_html}
           {tooltip_html}
         </div>
-        {panel_html}
 
         <script type="text/javascript">
         (function(){{
@@ -1717,12 +1717,12 @@ class TyK:
         """
         tid = self._resolve_top_id(top_val)
         if not tid:
-            self._notify(f"TOP <b>{top_val}</b> no encontrado (usá ID o nombre exacto).", "error")
+            self._notify(f"Cluster <b>{top_val}</b> no encontrado (use ID o nombre exacto).", "error")
             return
 
         subs = self.subclusters_by_top.get(tid, [])
         if not subs:
-            self._notify(f"El TOP <b>{self.label_map_top.get(tid, tid)}</b> (ID {tid}) no tiene subclusters.", "warn")
+            self._notify(f"El cluster <b>{self.label_map_top.get(tid, tid)}</b> (ID {tid}) no tiene subclusters.", "warn")
             return
 
         # Datos de nodos SUB
@@ -1948,7 +1948,7 @@ class TyK:
         if not cluster_top.strip(): # Para SUB obligamos a elegir primero un TOP (y le mostramos sus opciones)
           pairs = [(cid, self.label_map_top[cid]) for cid in sorted(self.label_map_top, key=int)]
           self._render_candidates_table("Clusters TOP disponibles", pairs, limit=listar_max)
-          self._notify("Indicá <b>cluster_top</b> (ID o nombre) para visualizar.", "info")
+          self._notify("Indique <b>cluster_top</b> (ID o nombre) para visualizar.", "info")
           return
 
         tid = self._resolve_top_id(cluster_top.strip())
@@ -1966,7 +1966,7 @@ class TyK:
                 f"Subclusters de TOP {self.label_map_top.get(tid, tid)} (ID {tid})",
                 sub_pairs, limit=listar_max
             )
-            self._notify("Indicá <b>cluster_sub</b> (ID o nombre) para visualizar.", "info")
+            self._notify("Indique <b>cluster_sub</b> (ID o nombre) para visualizar.", "info")
             return
 
 
@@ -2260,11 +2260,11 @@ class TyK:
           return
 
         if not cluster or not cluster.strip():
-            self._notify("Indicá un <b>cluster</b> (ID o nombre) para renombrar.", "error")
+            self._notify("Indique un <b>cluster</b> (ID o nombre) para renombrar.", "error")
             return
 
         if not new_name or not new_name.strip():
-            self._notify("Indicá el <b>nuevo nombre</b> (new_name) para renombrar.", "error")
+            self._notify("Indique el <b>nuevo nombre</b> (new_name) para renombrar.", "error")
             return
 
         new_name = new_name.strip()
@@ -2292,7 +2292,7 @@ class TyK:
         if level == "TOP":
             tid = self._resolve_top_id(cluster)
             if not tid:
-                self._notify(f"TOP <b>{cluster}</b> no encontrado (usá ID o nombre exacto).", "error")
+                self._notify(f"TOP <b>{cluster}</b> no encontrado (use ID o nombre exacto).", "error")
                 return
             _apply_rename(tid, self.label_map_top, self.cluster_name_to_id, self.gdf_nodes_top, "TOP")
             return
@@ -2325,7 +2325,7 @@ class TyK:
         if not candidates:
             hint = ""
             if not resolved_top:
-                hint = " Si el nombre existe en más de un TOP, indicá también <b>top_id</b> (ID o nombre del TOP)."
+                hint = " Si el nombre existe en más de un TOP, indique también <b>top_id</b> (ID o nombre del TOP)."
             self._notify(f"SUB <b>{cluster}</b> no encontrado.{hint}", "error")
             return
 
@@ -2342,7 +2342,7 @@ class TyK:
                             f"(<b>{self.label_map_top.get(owner_top, owner_top)}</b>)</li>")
             self._notify(
                 "El nombre indicado coincide con múltiples SUB en distintos TOP. "
-                "Indicá <b>top_id</b> para desambiguar:<ul>" + "".join(items) + "</ul>",
+                "Indique <b>top_id</b> para desambiguar:<ul>" + "".join(items) + "</ul>",
                 "warn"
             )
             return

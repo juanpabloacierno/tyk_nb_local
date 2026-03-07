@@ -59,6 +59,43 @@
                     <span class="font-medium text-sm text-gray-700">{{ chart.title }}</span>
                     <button onclick="refreshChart('{{ chart.chart_type }}')" class="text-blue-600 hover:text-blue-800 text-xs">{% trans "Refresh" %}</button>
                 </div>
+                {% if chart.param_defs %}
+                <div class="bg-white border-b border-gray-100 px-3 py-2 grid gap-2"
+                     style="grid-template-columns: repeat({{ chart.param_defs|length }}, minmax(0,1fr))">
+                    {% for param in chart.param_defs %}
+                    <div>
+                        <label class="block text-xs font-medium text-gray-600 mb-1">{{ param.label }}</label>
+                        {% if param.type == 'dropdown' %}
+                        <select class="chart-param-input w-full border border-gray-300 rounded px-2 py-1.5 text-sm"
+                                data-param="{{ param.name }}"
+                                onchange="refreshChart('{{ chart.chart_type }}')">
+                            {% for opt in param.options %}
+                            <option value="{{ opt }}" {% if opt == param.value %}selected{% endif %}>{{ opt }}</option>
+                            {% endfor %}
+                        </select>
+                        {% elif param.type == 'number' or param.type == 'slider' %}
+                        <input type="number" value="{{ param.value }}"
+                               {% if param.min is not None %}min="{{ param.min }}"{% endif %}
+                               {% if param.max is not None %}max="{{ param.max }}"{% endif %}
+                               {% if param.step is not None %}step="{{ param.step }}"{% endif %}
+                               class="chart-param-input w-full border border-gray-300 rounded px-2 py-1.5 text-sm"
+                               data-param="{{ param.name }}"
+                               onchange="refreshChart('{{ chart.chart_type }}')">
+                        {% elif param.type == 'boolean' %}
+                        <input type="checkbox" {% if param.value == 'True' or param.value == 'true' %}checked{% endif %}
+                               class="chart-param-input h-4 w-4 text-blue-600 border-gray-300 rounded"
+                               data-param="{{ param.name }}"
+                               onchange="refreshChart('{{ chart.chart_type }}')">
+                        {% else %}
+                        <input type="text" value="{{ param.value }}"
+                               class="chart-param-input w-full border border-gray-300 rounded px-2 py-1.5 text-sm"
+                               data-param="{{ param.name }}"
+                               onchange="refreshChart('{{ chart.chart_type }}')">
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+                {% endif %}
                 <div class="chart-content" id="chart-{{ chart.chart_type }}" style="min-height: 280px;">
                     {% if chart.needs_cluster %}
                     <div class="text-gray-400 text-center py-12 text-sm">{% trans "Select a cluster first" %}</div>
@@ -92,9 +129,9 @@
                 <!-- Cell Header -->
                 <div class="px-3 py-2 flex items-center justify-between border-b border-gray-200">
                     <div class="flex items-center">
-                        <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded mr-2">
+                       <!--  <span class="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-0.5 rounded mr-2">
                             {{ item.cell.order|add:1 }}
-                        </span>
+                        </span> -->
                         <h3 class="font-medium text-sm text-gray-900 truncate" style="max-width: 250px;">
                             {{ item.cell.title|default:"Untitled" }}
                         </h3>
@@ -129,15 +166,18 @@
                                    {% if param.min is not None %}min="{{ param.min }}"{% endif %}
                                    {% if param.max is not None %}max="{{ param.max }}"{% endif %}
                                    class="param-input w-full border border-gray-300 rounded px-2 py-1 text-xs"
-                                   data-cell-id="{{ item.cell.id }}" data-param-name="{{ param.name }}">
+                                   data-cell-id="{{ item.cell.id }}" data-param-name="{{ param.name }}"
+                                   onchange="runCell({{ item.cell.id }})">
                             {% elif param.type == 'boolean' %}
                             <input type="checkbox" name="{{ param.name }}" {% if param.value %}checked{% endif %}
                                    class="param-input h-4 w-4 text-blue-600 border-gray-300 rounded"
-                                   data-cell-id="{{ item.cell.id }}" data-param-name="{{ param.name }}">
+                                   data-cell-id="{{ item.cell.id }}" data-param-name="{{ param.name }}"
+                                   onchange="runCell({{ item.cell.id }})">
                             {% else %}
                             <input type="text" name="{{ param.name }}" value="{{ param.value }}"
                                    class="param-input w-full border border-gray-300 rounded px-2 py-1 text-xs"
-                                   data-cell-id="{{ item.cell.id }}" data-param-name="{{ param.name }}">
+                                   data-cell-id="{{ item.cell.id }}" data-param-name="{{ param.name }}"
+                                   onchange="runCell({{ item.cell.id }})">
                             {% endif %}
                         </div>
                         {% endfor %}
@@ -151,7 +191,7 @@
                         <span class="text-xs font-medium text-gray-600">{% trans "Output" %}</span>
                         <span class="execution-time text-xs text-gray-400"></span>
                     </div>
-                    <div class="output-container p-2 max-h-48 overflow-y-auto">
+                    <div class="output-container p-2">
                         <div class="output-text text-xs font-mono whitespace-pre-wrap"></div>
                         <div class="output-html mt-2"></div>
                         <div class="output-error text-red-600 text-xs font-mono hidden"></div>
@@ -177,16 +217,17 @@ const chartsData = {{ charts_data_json|safe }};
 const autoRunCells = [{% for item in cells_data %}{% if item.cell.cell_type != 'markdown' %}{{ item.cell.id }},{% endif %}{% endfor %}];
 
 // Helper function to insert HTML with executable scripts
-function insertHtmlWithScripts(container, htmlString) {
+// External scripts are awaited before inline scripts run, so CDN libs are ready.
+async function insertHtmlWithScripts(container, htmlString) {
     container.innerHTML = '';
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = htmlString;
 
     const scripts = tempDiv.querySelectorAll('script');
-    const scriptContents = [];
+    const scriptInfos = [];
 
     scripts.forEach(script => {
-        scriptContents.push({
+        scriptInfos.push({
             content: script.textContent,
             src: script.src,
             type: script.type || 'text/javascript'
@@ -196,16 +237,25 @@ function insertHtmlWithScripts(container, htmlString) {
 
     container.innerHTML = tempDiv.innerHTML;
 
-    scriptContents.forEach(scriptInfo => {
-        const newScript = document.createElement('script');
-        newScript.type = scriptInfo.type;
-        if (scriptInfo.src) {
-            newScript.src = scriptInfo.src;
-        } else {
-            newScript.textContent = scriptInfo.content;
-        }
-        container.appendChild(newScript);
-    });
+    // Load external scripts first and wait for each to finish
+    for (const info of scriptInfos.filter(s => s.src)) {
+        await new Promise((resolve) => {
+            const s = document.createElement('script');
+            s.type = info.type;
+            s.src = info.src;
+            s.onload = resolve;
+            s.onerror = resolve; // continue even if CDN fails
+            container.appendChild(s);
+        });
+    }
+
+    // Then run inline scripts
+    for (const info of scriptInfos.filter(s => !s.src)) {
+        const s = document.createElement('script');
+        s.type = info.type;
+        s.textContent = info.content;
+        container.appendChild(s);
+    }
 }
 
 // Refresh a single chart
@@ -213,9 +263,20 @@ async function refreshChart(chartType) {
     const container = document.getElementById(`chart-${chartType}`);
     if (!container) return;
 
-    // Get default params from chartsData array
+    // Start from default_params, then override with any UI input values
     const chartConfig = chartsData.find(c => c.chart_type === chartType);
     const params = chartConfig ? { ...chartConfig.default_params } : {};
+    const card = container.closest('.chart-card');
+    card.querySelectorAll('.chart-param-input').forEach(input => {
+        const name = input.dataset.param;
+        if (input.type === 'checkbox') {
+            params[name] = input.checked;
+        } else if (input.type === 'number') {
+            params[name] = parseFloat(input.value);
+        } else {
+            params[name] = input.value;
+        }
+    });
 
     container.innerHTML = '<div class="text-gray-400 text-center py-12 text-sm">Loading...</div>';
 
@@ -236,7 +297,7 @@ async function refreshChart(chartType) {
 
         if (data.success) {
             if (data.html) {
-                insertHtmlWithScripts(container, data.html);
+                await insertHtmlWithScripts(container, data.html);
             } else if (data.stdout) {
                 container.innerHTML = '<pre class="text-xs p-2 overflow-auto">' + data.stdout + '</pre>';
             } else {
@@ -298,6 +359,7 @@ async function runSetup() {
             }
 
             await refreshAllCharts();
+            banner.classList.add('hidden');
         } else {
             banner.className = 'mb-3 px-4 py-2 rounded-lg text-sm bg-red-100 text-red-800';
             banner.innerHTML = '<span class="font-medium">Failed:</span> ' + data.errors.join('; ');
@@ -362,7 +424,7 @@ async function runCell(cellId) {
 
         if (data.success) {
             if (data.output_text) outputText.textContent = data.output_text;
-            if (data.output_html) insertHtmlWithScripts(outputHtml, data.output_html);
+            if (data.output_html) await insertHtmlWithScripts(outputHtml, data.output_html);
             execTime.textContent = data.execution_time.toFixed(2) + 's';
         } else {
             outputError.classList.remove('hidden');

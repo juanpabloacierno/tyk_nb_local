@@ -43,6 +43,7 @@ class Cell(models.Model):
     cell_type = models.CharField(max_length=20, choices=CELL_TYPE_CHOICES, default='code')
     source_code = models.TextField(blank=True, help_text="Source code (required for code cells, optional for markdown)")
     description = models.TextField(blank=True, help_text="Markdown content shown above the cell")
+    is_active = models.BooleanField(default=True, help_text="Show this cell in the notebook/dashboard view")
     is_executable = models.BooleanField(default=True)
     auto_run = models.BooleanField(default=False, help_text="Run automatically when parameters change")
     is_setup_cell = models.BooleanField(default=False, help_text="Run once at notebook initialization")
@@ -183,6 +184,43 @@ class DashboardChart(models.Model):
         if self.title:
             return self.title
         return self.chart_type.name
+
+
+class DashboardChartParameter(models.Model):
+    """A configurable parameter for a DashboardChart instance."""
+    PARAM_TYPE_CHOICES = [
+        ('dropdown', 'Dropdown'),
+        ('string', 'Text Input'),
+        ('number', 'Number'),
+        ('boolean', 'Checkbox'),
+        ('slider', 'Slider'),
+    ]
+
+    dashboard_chart = models.ForeignKey(DashboardChart, on_delete=models.CASCADE, related_name='parameters')
+    name = models.CharField(max_length=100)
+    label = models.CharField(max_length=200, blank=True, help_text="Display label (defaults to name if blank)")
+    param_type = models.CharField(max_length=20, choices=PARAM_TYPE_CHOICES, default='string')
+    default_value = models.TextField(blank=True)
+    options = models.JSONField(default=list, blank=True, help_text="Options for dropdown type")
+    min_value = models.FloatField(null=True, blank=True)
+    max_value = models.FloatField(null=True, blank=True)
+    step = models.FloatField(null=True, blank=True)
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ['order']
+        unique_together = ['dashboard_chart', 'name']
+
+    def __str__(self):
+        return f"{self.dashboard_chart} — {self.name}"
+
+    def get_label(self):
+        return self.label or self.name
+
+    def get_options_list(self):
+        if isinstance(self.options, list):
+            return self.options
+        return json.loads(self.options) if self.options else []
 
 
 class NotebookSession(models.Model):

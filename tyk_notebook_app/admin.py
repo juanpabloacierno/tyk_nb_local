@@ -17,7 +17,7 @@ from django.shortcuts import render, redirect
 from django.http import HttpResponseRedirect
 from django import forms
 from django.utils.safestring import mark_safe
-from .models import Notebook, Cell, Parameter, Execution, NotebookSession, ChartType, DashboardChart
+from .models import Notebook, Cell, Parameter, Execution, NotebookSession, ChartType, DashboardChart, DashboardChartParameter
 from .importer import import_notebook
 
 
@@ -193,7 +193,7 @@ class CellInline(admin.TabularInline):
     """Inline admin for notebook cells"""
     model = Cell
     extra = 0
-    fields = ['order', 'title', 'cell_type', 'is_executable', 'is_setup_cell']
+    fields = ['order', 'title', 'cell_type', 'is_active', 'is_executable', 'is_setup_cell']
     ordering = ['order']
     show_change_link = True
 
@@ -215,7 +215,38 @@ class NotebookAdmin(admin.ModelAdmin):
     prepopulated_fields = {'slug': ('name',)}
     inlines = [DashboardChartInline, CellInline]
     change_list_template = 'admin/notebook/notebook_changelist.html'
-    actions = ['duplicate_notebooks']
+    actions = ['duplicate_notebooks', 'init_dashboard_charts']
+
+    def init_dashboard_charts(self, request, queryset):
+        """Create default DashboardChart records for all 5 chart types if missing."""
+        default_chart_types = [
+            ('world_map', 0),
+            ('clusters_network', 1),
+            ('subclusters_network', 2),
+            ('cooc_network', 3),
+            ('cluster_stats', 4),
+        ]
+        created_total = 0
+        for notebook in queryset:
+            for key, order in default_chart_types:
+                try:
+                    chart_type = ChartType.objects.get(key=key)
+                except ChartType.DoesNotExist:
+                    continue
+                _, created = DashboardChart.objects.get_or_create(
+                    notebook=notebook,
+                    chart_type=chart_type,
+                    defaults={'order': order, 'is_active': True},
+                )
+                if created:
+                    created_total += 1
+        self.message_user(
+            request,
+            f"Created {created_total} dashboard chart record(s).",
+            messages.SUCCESS,
+        )
+
+    init_dashboard_charts.short_description = "Initialize default dashboard charts"
 
     def duplicate_notebooks(self, request, queryset):
         from django.utils.text import slugify
@@ -400,18 +431,55 @@ class CellAdmin(admin.ModelAdmin):
     """Admin for Cells"""
     form = CellAdminForm
     list_display = ['title', 'notebook', 'order', 'cell_type', 'is_executable',
-                    'is_setup_cell', 'param_count']
+                    'is_setup_cell', 'param_count', 'is_active']
     list_filter = ['notebook', 'cell_type', 'is_executable', 'is_setup_cell']
     search_fields = ['title', 'description', 'source_code']
     ordering = ['notebook', 'order']
     inlines = [ParameterInline]
+    actions = ['duplicate_cells']
+
+    def duplicate_cells(self, request, queryset):
+        duplicated = 0
+        for cell in queryset:
+            # Place the copy right after the original by using a high order value
+            max_order = cell.notebook.cells.order_by('-order').values_list('order', flat=True).first() or 0
+            new_cell = Cell.objects.create(
+                notebook=cell.notebook,
+                order=max_order + 1,
+                title=f"Copy of {cell.title}" if cell.title else "",
+                cell_type=cell.cell_type,
+                source_code=cell.source_code,
+                description=cell.description,
+                is_active=cell.is_active,
+                is_executable=cell.is_executable,
+                auto_run=cell.auto_run,
+                is_setup_cell=cell.is_setup_cell,
+            )
+            for param in cell.parameters.all():
+                Parameter.objects.create(
+                    cell=new_cell,
+                    name=param.name,
+                    param_type=param.param_type,
+                    default_value=param.default_value,
+                    options=param.options,
+                    min_value=param.min_value,
+                    max_value=param.max_value,
+                    step=param.step,
+                    description=param.description,
+                    order=param.order,
+                )
+            duplicated += 1
+
+        self.message_user(request, f"Successfully duplicated {duplicated} cell(s).", messages.SUCCESS)
+
+    duplicate_cells.short_description = "Duplicate selected cells"
 
     fieldsets = (
         (None, {
             'fields': ('notebook', 'order', 'title', 'cell_type')
         }),
         ('Configuration', {
-            'fields': ('is_executable', 'is_setup_cell', 'auto_run')
+            'fields': ('is_active', 'is_executable', 'is_setup_cell', 'auto_run')
         }),
         ('Content', {
             'fields': ('description', 'source_code'),
@@ -512,6 +580,13 @@ class ChartTypeAdmin(admin.ModelAdmin):
     )
 
 
+class DashboardChartParameterInline(admin.TabularInline):
+    model = DashboardChartParameter
+    extra = 0
+    fields = ['order', 'name', 'label', 'param_type', 'default_value', 'options', 'min_value', 'max_value', 'step']
+    ordering = ['order']
+
+
 @admin.register(DashboardChart)
 class DashboardChartAdmin(admin.ModelAdmin):
     """Admin for Dashboard Charts"""
@@ -519,6 +594,7 @@ class DashboardChartAdmin(admin.ModelAdmin):
     list_filter = ['notebook', 'chart_type', 'is_active']
     search_fields = ['notebook__name', 'title', 'chart_type__name']
     ordering = ['notebook', 'order']
+    inlines = [DashboardChartParameterInline]
 
     fieldsets = (
         (None, {

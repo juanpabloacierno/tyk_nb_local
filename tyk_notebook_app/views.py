@@ -38,6 +38,8 @@ def notebook_detail(request, slug):
 
     # Get cells with their parameters (executable cells + markdown cells)
     cells = notebook.cells.filter(
+        is_active=True
+    ).filter(
         Q(is_executable=True) | Q(cell_type='markdown')
     ).prefetch_related("parameters")
 
@@ -107,7 +109,7 @@ def run_setup(request, slug):
     executor = session_manager.get_or_create_session(session_key, base_path=base_path)
 
     # Run setup cells
-    setup_cells = notebook.cells.filter(is_setup_cell=True).order_by("order")
+    setup_cells = notebook.cells.filter(is_active=True, is_setup_cell=True).order_by("order")
 
     all_output = []
     errors = []
@@ -300,6 +302,8 @@ def dashboard_detail(request, slug):
 
     # Get cells with their parameters (executable cells + markdown cells)
     cells = notebook.cells.filter(
+        is_active=True
+    ).filter(
         Q(is_executable=True) | Q(cell_type='markdown')
     ).prefetch_related("parameters")
 
@@ -341,37 +345,51 @@ def dashboard_detail(request, slug):
             }
         )
 
-    # Get dashboard charts from database or use defaults
-    dashboard_charts = list(notebook.dashboard_charts.filter(is_active=True).order_by('order'))
+    # Default chart list (always shown)
+    default_chart_types = [
+        ('world_map', 'Global Publications Map', {}),
+        ('clusters_network', 'TOP Clusters Network', {}),
+        ('subclusters_network', 'Subclusters Network', {}),
+        ('cooc_network', 'Co-occurrence Network', {'node_type': 'K', 'max_nodes': 80}),
+        ('cluster_stats', 'Cluster Details', {}),
+    ]
 
-    # If no charts configured, create default set
-    if not dashboard_charts:
-        default_chart_types = [
-            ('world_map', 'Global Publications Map', {}),
-            ('clusters_network', 'TOP Clusters Network', {}),
-            ('subclusters_network', 'Subclusters Network', {}),
-            ('cooc_network', 'Co-occurrence Network', {'node_type': 'K', 'max_nodes': 80}),
-            ('cluster_stats', 'Cluster Details', {}),
-        ]
-        charts_data = [
-            {
-                'chart_type': ct,
-                'title': title,
-                'default_params': params,
-                'needs_cluster': ct in ('subclusters_network', 'cluster_stats'),
-            }
-            for ct, title, params in default_chart_types
-        ]
-    else:
-        charts_data = [
-            {
-                'chart_type': chart.chart_type.key,
-                'title': chart.get_title(),
-                'default_params': chart.default_params or {},
-                'needs_cluster': chart.chart_type.key in ('subclusters_network', 'cluster_stats'),
-            }
-            for chart in dashboard_charts
-        ]
+    # Build a lookup of ALL DB-configured charts by chart_type key (active and inactive)
+    db_charts = {
+        chart.chart_type.key: chart
+        for chart in notebook.dashboard_charts.all().prefetch_related('parameters').select_related('chart_type')
+    }
+
+    # Build entries with sort key: DB order when configured, else fallback index * 100
+    raw_charts = []
+    for idx, (ct, default_title, default_params) in enumerate(default_chart_types):
+        db_chart = db_charts.get(ct)
+        # Skip chart types explicitly disabled in DB
+        if db_chart is not None and not db_chart.is_active:
+            continue
+        sort_key = db_chart.order if db_chart is not None else idx * 100
+        entry = {
+            'chart_type': ct,
+            'title': db_chart.get_title() if db_chart else default_title,
+            'default_params': (db_chart.default_params or default_params) if db_chart else default_params,
+            'needs_cluster': ct in ('subclusters_network', 'cluster_stats'),
+            'param_defs': [
+                {
+                    'name': p.name,
+                    'label': p.get_label(),
+                    'type': p.param_type,
+                    'value': p.default_value,
+                    'options': p.get_options_list(),
+                    'min': p.min_value,
+                    'max': p.max_value,
+                    'step': p.step,
+                }
+                for p in db_chart.parameters.all()
+            ] if db_chart else [],
+        }
+        raw_charts.append((sort_key, entry))
+
+    charts_data = [entry for _, entry in sorted(raw_charts, key=lambda x: x[0])]
 
     context = {
         "notebook": notebook,
@@ -444,7 +462,20 @@ def _build_chart_code(chart_type: str, params: dict) -> str:
         return f'tyk.plot_subclusters_graph_interactive("{top_id}", min_edge_weight={min_weight}, mode="inline")'
 
     elif chart_type == "cooc_network":
-        node_type = params.get("node_type", "K")
+        _node_type_map = {
+            "Keywords": "K",
+            "Title Words": "TK",
+            "Subject Categories": "S",
+            "Subject Sub-Categories": "S2",
+            "Journal Sources": "J",
+            "Countries": "C",
+            "Institutions": "I",
+            "References": "R",
+            "Reference Sources": "RJ",
+            "Authors (Freq)": "A",
+        }
+        raw_node_type = params.get("node_type", "K")
+        node_type = _node_type_map.get(raw_node_type, raw_node_type)
         max_nodes = params.get("max_nodes", 100)
         return f'tyk.plot_cooc_network_interactive(node_type="{node_type}", max_nodes={max_nodes}, height_px=400, mode="inline")'
 

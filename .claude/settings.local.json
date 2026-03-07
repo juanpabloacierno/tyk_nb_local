@@ -17,7 +17,9 @@
       "Bash(ls:*)",
       "Bash(source .venv/bin/activate)",
       "Bash(python:*)",
-      "Bash(open:*)"
+      "Bash(open:*)",
+      "Bash(.venv/bin/python:*)",
+      "Bash(DJANGO_SETTINGS_MODULE=tyk_notebook_app.settings .venv/bin/python:*)"
     ]
   }
 }
