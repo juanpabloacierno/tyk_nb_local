@@ -25,4 +25,7 @@ urlpatterns = [
 
     # API
     path('api/execute/', views.api_execute, name='api_execute'),
+
+    # Static data files (PDFs, etc.)
+    path('pdf/<path:filepath>', views.serve_data_file, name='serve_data_file'),
 ]

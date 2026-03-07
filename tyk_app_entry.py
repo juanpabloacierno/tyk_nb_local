@@ -75,10 +75,11 @@ def import_notebooks():
     from tyk_notebook_app.importer import import_notebook
 
     notebook_files = [
-        "PruebaTYK.ipynb",
-        "pruebatyk.py",
-        "tyk_demo_20251018.ipynb",
-        "tyk_demo_20251018.py",
+        # "PruebaTYK.ipynb",
+        # "pruebatyk.py",
+        # "tyk_demo_20251018.ipynb",
+        # "tyk_demo_20251018.py",
+        "tyk_INeS.ipynb"
     ]
 
     for filename in notebook_files:

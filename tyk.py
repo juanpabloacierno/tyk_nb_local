@@ -1358,6 +1358,22 @@ class TyK:
         return c
 
     # -------- GRAFOS --------
+    def _build_pdf_map(self) -> Dict[str, str]:
+        """Scan clusters directory and return {cluster_id: '/pdf/relative/path'} for each found PDF."""
+        clusters_dir = os.path.join(self.path_base, "clusters")
+        pdf_map: Dict[str, str] = {}
+        if not os.path.isdir(clusters_dir):
+            return pdf_map
+        for entry in os.scandir(clusters_dir):
+            if not entry.is_dir():
+                continue
+            for fname in os.listdir(entry.path):
+                if fname.startswith("cluster_") and fname.endswith("_report.pdf"):
+                    cid = fname[len("cluster_"):-len("_report.pdf")]
+                    rel = os.path.relpath(os.path.join(entry.path, fname)).replace(os.sep, "/")
+                    pdf_map[cid] = f"/pdf/{rel}"
+        return pdf_map
+
     def _render_vis_network(
         self,
         nodes: list,
@@ -1368,12 +1384,13 @@ class TyK:
         show_colorbar: bool = True,   # muestra una leyenda tipo colorbar (min↔max)
         scaling_min: int = 8,          # tamaño mínimo de nodo (px)
         scaling_max: int = 36,          # tamaño máximo de nodo (px)  ← ¡subido!
-        height_px: int = 680 ,           # alto del canvas
+        height_px: int = 480 ,           # alto del canvas
         mode: str = "auto",          # <-- NUEVO: "auto" | "inline" | "browser"
         outfile: Optional[str] = None,  # <-- NUEVO: ruta opcional para guardar
         open_in_browser: bool = True,    # <-- NUEVO: abrir automáticamente
-        show_summary_panel: bool = False,          # <<< NUEVO
-        summaries_map: Optional[Dict[str, str]] = None  # <<< NUEVO (id -> HTML)
+        show_summary_panel: bool = False,
+        summaries_map: Optional[Dict[str, str]] = None,
+        pdf_map: Optional[Dict[str, str]] = None,  # cluster_id -> PDF URL
     ) -> None:
 
         # --- rango para la leyenda (usar crudo si existe) ---
@@ -1461,7 +1478,7 @@ class TyK:
             panel_html = f"""
             <div id="{panel_id}" style="margin:6px 0 10px 0; padding:10px 12px; border:1px solid #d8e4ff;
                 border-radius:8px; background:#f6f9ff; font-family:sans-serif; color:#123;">
-              <b>Tip:</b> hacé clic en un nodo para ver el resumen aquí.
+              <b>Tip:</b> Click en un nodo para ver el resumen.
             </div>
             """
 
@@ -1472,6 +1489,7 @@ class TyK:
         nodes_json = _safe_json(nodes)
         edges_json = _safe_json(edges)
         summaries_json = _safe_json(summaries_map or {})
+        pdf_map_js = _safe_json(pdf_map or {})
 
         tooltip_html = f"""
         <div id="{div_id}_tip"
@@ -1484,12 +1502,12 @@ class TyK:
 
         html = f"""
         <div style="font-family:sans-serif;margin:6px 0 10px 0;font-weight:600">{title}</div>
-        {panel_html}
         <div style="position:relative;">
           <div id="{div_id}" style="width:100%; height:{height_px}px; border:1px solid #e1e5ea; border-radius:8px; background-color:white;"></div>
           {colorbar_html}
           {tooltip_html}
         </div>
+        {panel_html}
 
         <script type="text/javascript">
         (function(){{
@@ -1516,23 +1534,28 @@ class TyK:
             var options   = {options_json};
             var network   = new vis.Network(container, data, options);
             var SUMMARIES = {summaries_json};
+            var PDF_MAP   = {pdf_map_js};
             var panel     = document.getElementById("{panel_id}");
 
             // ---- CLICK: mostrar resumen en el panel ----
             network.on("click", function(params){{
               if (!panel) return;
               if (params.nodes && params.nodes.length) {{
-                var nid   = String(params.nodes[0]);
-                var node  = data.nodes.get(nid);
-                var title = (node && node.label) ? node.label : "Cluster";
-                var txt   = SUMMARIES[nid] || "<i>Sin resumen disponible.</i>";
+                var nid     = String(params.nodes[0]);
+                var node    = data.nodes.get(nid);
+                var title   = (node && node.label) ? node.label : "Cluster";
+                var txt     = SUMMARIES[nid] || "<i>Sin resumen disponible.</i>";
+                var pdfUrl  = PDF_MAP[nid];
+                var pdfLink = pdfUrl
+                  ? "<br><hr><br><strong><a href='" + pdfUrl + "' target='_blank'>Ver reporte completo</a></strong>"
+                  : "";
                 panel.innerHTML =
                   "<div style='font-family:sans-serif'>" +
                     "<div style='font-weight:600; margin-bottom:6px;'>" + title + "</div>" +
-                    "<div style='line-height:1.45;'>" + txt + "</div>" +
+                    "<div style='line-height:1.45;'>" + txt + pdfLink + "</div>" +
                   "</div>";
               }}
-            }});  // <-- ¡cerrar el handler de click!
+            }});
 
             // ---- TOOLTIP flotante (hover) ----
             function moveTip(evt) {{
@@ -1677,9 +1700,8 @@ class TyK:
             edges.append({"from": e["source"], "to": e["target"], "value": w, "width": max(1.0, w/2.0)})
 
         self._render_vis_network(nodes, edges, title=title, mode=mode, show_summary_panel=True,
-          summaries_map=self.cluster_summaries)
-
-
+          summaries_map=self.cluster_summaries,
+          pdf_map=self._build_pdf_map())
 
     def plot_subclusters_graph_interactive(
         self,
@@ -1757,7 +1779,8 @@ class TyK:
             title = f"Subclusters de {self.label_map_top.get(tid, '')}"
 
         self._render_vis_network(nodes, edges, title=title, mode=mode, show_summary_panel=True,
-          summaries_map=self.cluster_summaries)
+          summaries_map=self.cluster_summaries,
+          pdf_map=self._build_pdf_map())
 
     def plot_cooc_network_interactive(
         self,

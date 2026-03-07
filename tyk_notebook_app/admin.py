@@ -215,6 +215,76 @@ class NotebookAdmin(admin.ModelAdmin):
     prepopulated_fields = {'slug': ('name',)}
     inlines = [DashboardChartInline, CellInline]
     change_list_template = 'admin/notebook/notebook_changelist.html'
+    actions = ['duplicate_notebooks']
+
+    def duplicate_notebooks(self, request, queryset):
+        from django.utils.text import slugify
+        duplicated = 0
+        for notebook in queryset:
+            new_name = f"Copy of {notebook.name}"
+            base_slug = slugify(new_name)
+            slug = base_slug
+            counter = 1
+            while Notebook.objects.filter(slug=slug).exists():
+                slug = f"{base_slug}-{counter}"
+                counter += 1
+
+            new_notebook = Notebook.objects.create(
+                name=new_name,
+                slug=slug,
+                description=notebook.description,
+                source_file=notebook.source_file,
+                is_active=notebook.is_active,
+            )
+
+            cell_map = {}
+            for cell in notebook.cells.order_by('order'):
+                new_cell = Cell.objects.create(
+                    notebook=new_notebook,
+                    order=cell.order,
+                    title=cell.title,
+                    cell_type=cell.cell_type,
+                    source_code=cell.source_code,
+                    description=cell.description,
+                    is_executable=cell.is_executable,
+                    auto_run=cell.auto_run,
+                    is_setup_cell=cell.is_setup_cell,
+                )
+                cell_map[cell.pk] = new_cell
+
+                for param in cell.parameters.all():
+                    Parameter.objects.create(
+                        cell=new_cell,
+                        name=param.name,
+                        param_type=param.param_type,
+                        default_value=param.default_value,
+                        options=param.options,
+                        min_value=param.min_value,
+                        max_value=param.max_value,
+                        step=param.step,
+                        description=param.description,
+                        order=param.order,
+                    )
+
+            for chart in notebook.dashboard_charts.all():
+                DashboardChart.objects.create(
+                    notebook=new_notebook,
+                    chart_type=chart.chart_type,
+                    title=chart.title,
+                    order=chart.order,
+                    is_active=chart.is_active,
+                    default_params=chart.default_params,
+                )
+
+            duplicated += 1
+
+        self.message_user(
+            request,
+            f"Successfully duplicated {duplicated} notebook(s).",
+            messages.SUCCESS,
+        )
+
+    duplicate_notebooks.short_description = "Duplicate selected notebooks"
 
     fieldsets = (
         (None, {

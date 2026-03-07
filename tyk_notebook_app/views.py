@@ -3,10 +3,11 @@ Django views for TyK Notebook Application.
 Handles notebook display and cell execution.
 """
 import json
+import mimetypes
 import os
 import markdown
 from django.shortcuts import render, get_object_or_404, redirect
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse, HttpResponse, FileResponse, Http404
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
@@ -455,6 +456,19 @@ def _build_chart_code(chart_type: str, params: dict) -> str:
         return '# Select a cluster first'
 
     return "# Unknown chart type"
+
+
+@login_required
+def serve_data_file(request, filepath):
+    """Serve a file from within the TYK_DATA_PATH directory."""
+    base = os.path.normpath(settings.TYK_DATA_PATH)
+    full_path = os.path.normpath(os.path.join(base, filepath))
+    if not full_path.startswith(base + os.sep) and full_path != base:
+        raise Http404
+    if not os.path.isfile(full_path):
+        raise Http404
+    mime_type, _ = mimetypes.guess_type(full_path)
+    return FileResponse(open(full_path, "rb"), content_type=mime_type or "application/octet-stream")
 
 
 # API views for programmatic access

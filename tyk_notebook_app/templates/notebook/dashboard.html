@@ -51,61 +51,6 @@
 
     <!-- LEFT: Dashboard Panel -->
     <div class="w-1/2 bg-white rounded-lg shadow-md overflow-hidden flex flex-col">
-        <!-- Dashboard Header with Filters -->
-        <div class="bg-gray-50 border-b border-gray-200 px-4 py-3 flex-shrink-0">
-            <div class="flex items-center justify-between mb-3">
-                <h2 class="font-semibold text-gray-900">{% trans "Dashboard" %}</h2>
-                <button onclick="refreshAllCharts()" id="refresh-btn"
-                        class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs flex items-center">
-                    <span id="refresh-spinner" class="loading-spinner mr-1 hidden" style="width:12px;height:12px;"></span>
-                    {% trans "Refresh All" %}
-                </button>
-            </div>
-
-            <!-- Filter Controls -->
-            <div class="grid grid-cols-4 gap-3 text-sm">
-                <!-- Cluster Selection -->
-                <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-1">{% trans "Cluster" %}</label>
-                    <select id="filter-cluster" class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm">
-                        <option value="">-- {% trans "Select" %} --</option>
-                    </select>
-                </div>
-
-                <!-- Colorscale -->
-                <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-1">{% trans "Colorscale" %}</label>
-                    <select id="filter-colorscale" class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm">
-                        <option value="Viridis" selected>Viridis</option>
-                        <option value="YlOrRd">YlOrRd</option>
-                        <option value="Blues">Blues</option>
-                        <option value="Plasma">Plasma</option>
-                        <option value="Turbo">Turbo</option>
-                    </select>
-                </div>
-
-                <!-- Node Type -->
-                <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-1">{% trans "Co-oc Type" %}</label>
-                    <select id="filter-node-type" class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm">
-                        <option value="K">{% trans "Keywords" %}</option>
-                        <option value="TK">{% trans "Title Words" %}</option>
-                        <option value="A">{% trans "Authors" %}</option>
-                        <option value="J">{% trans "Journals" %}</option>
-                        <option value="C">{% trans "Countries" %}</option>
-                        <option value="I">{% trans "Institutions" %}</option>
-                    </select>
-                </div>
-
-                <!-- Max Nodes -->
-                <div>
-                    <label class="block text-xs font-medium text-gray-600 mb-1">{% trans "Max Nodes" %}</label>
-                    <input type="number" id="filter-max-nodes" value="80" min="20" max="300" step="10"
-                           class="w-full border border-gray-300 rounded px-2 py-1.5 text-sm">
-                </div>
-            </div>
-        </div>
-
         <!-- Charts Container (scrollable) -->
         <div class="flex-1 overflow-y-auto p-3 space-y-3" id="dashboard-charts">
             {% for chart in charts_data %}
@@ -228,15 +173,8 @@ let isSetupComplete = {{ setup_complete|yesno:"true,false" }};
 // Chart configurations loaded from server
 const chartsData = {{ charts_data_json|safe }};
 
-// Get current filter values
-function getFilterParams() {
-    return {
-        cluster_id: document.getElementById('filter-cluster').value,
-        colorscale: document.getElementById('filter-colorscale').value,
-        node_type: document.getElementById('filter-node-type').value,
-        max_nodes: parseInt(document.getElementById('filter-max-nodes').value) || 80,
-    };
-}
+// All executable cells, in order
+const autoRunCells = [{% for item in cells_data %}{% if item.cell.cell_type != 'markdown' %}{{ item.cell.id }},{% endif %}{% endfor %}];
 
 // Helper function to insert HTML with executable scripts
 function insertHtmlWithScripts(container, htmlString) {
@@ -275,24 +213,11 @@ async function refreshChart(chartType) {
     const container = document.getElementById(`chart-${chartType}`);
     if (!container) return;
 
-    const card = container.closest('.chart-card');
-    const needsCluster = card.dataset.needsCluster === 'true';
-    const filters = getFilterParams();
-
-    // Skip if chart needs cluster but none selected
-    if (needsCluster && !filters.cluster_id) {
-        container.innerHTML = '<div class="text-gray-400 text-center py-12 text-sm">Select a cluster first</div>';
-        return;
-    }
-
     // Get default params from chartsData array
     const chartConfig = chartsData.find(c => c.chart_type === chartType);
-    const defaultParams = chartConfig ? chartConfig.default_params : {};
+    const params = chartConfig ? { ...chartConfig.default_params } : {};
 
     container.innerHTML = '<div class="text-gray-400 text-center py-12 text-sm">Loading...</div>';
-
-    // Merge default params with filter params
-    const params = { ...defaultParams, ...filters };
 
     try {
         const response = await fetch(`/dashboard/${notebookSlug}/chart/`, {
@@ -334,52 +259,9 @@ async function refreshAllCharts() {
         return;
     }
 
-    const btn = document.getElementById('refresh-btn');
-    const spinner = document.getElementById('refresh-spinner');
-    btn.disabled = true;
-    spinner.classList.remove('hidden');
-
-    // Get all chart types from the DOM
     const chartCards = document.querySelectorAll('.chart-card');
     for (const card of chartCards) {
-        const chartType = card.dataset.chartType;
-        await refreshChart(chartType);
-    }
-
-    btn.disabled = false;
-    spinner.classList.add('hidden');
-}
-
-// Load cluster options after setup
-async function loadClusterOptions() {
-    try {
-        const response = await fetch('/api/execute/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                code: 'import json; clusters = tyk.list_clusters(show=False); print(json.dumps(clusters))',
-                session_id: 'user_{{ request.user.id }}',
-            }),
-        });
-
-        const data = await response.json();
-        if (data.success && data.output_text) {
-            const clusters = JSON.parse(data.output_text.trim());
-            const select = document.getElementById('filter-cluster');
-
-            select.innerHTML = '<option value="">-- Select --</option>';
-
-            clusters.forEach(([id, name]) => {
-                const option = document.createElement('option');
-                option.value = id;
-                option.textContent = name + ' (' + id + ')';
-                select.appendChild(option);
-            });
-        }
-    } catch (error) {
-        console.error('Failed to load clusters:', error);
+        await refreshChart(card.dataset.chartType);
     }
 }
 
@@ -411,7 +293,10 @@ async function runSetup() {
             text.textContent = 'Ready';
             isSetupComplete = true;
 
-            await loadClusterOptions();
+            for (const cellId of autoRunCells) {
+                await runCell(cellId);
+            }
+
             await refreshAllCharts();
         } else {
             banner.className = 'mb-3 px-4 py-2 rounded-lg text-sm bg-red-100 text-red-800';
@@ -509,26 +394,6 @@ async function resetSession() {
     }
 }
 
-// Filter change handlers
-document.getElementById('filter-cluster').addEventListener('change', () => {
-    // Refresh cluster-dependent charts
-    document.querySelectorAll('.chart-card[data-needs-cluster="true"]').forEach(card => {
-        refreshChart(card.dataset.chartType);
-    });
-});
-
-document.getElementById('filter-colorscale').addEventListener('change', () => {
-    refreshChart('world_map');
-});
-
-document.getElementById('filter-node-type').addEventListener('change', () => {
-    refreshChart('cooc_network');
-});
-
-document.getElementById('filter-max-nodes').addEventListener('change', () => {
-    refreshChart('cooc_network');
-});
-
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
     // Render markdown
@@ -536,10 +401,7 @@ document.addEventListener('DOMContentLoaded', function() {
         el.innerHTML = marked.parse(el.textContent);
     });
 
-    if (isSetupComplete) {
-        loadClusterOptions();
-        refreshAllCharts();
-    }
+    runSetup();
 });
 </script>
 {% endblock %}

@@ -293,6 +293,10 @@ async function runSetup() {
             banner.innerHTML = '<span class="font-medium">Notebook initialized.</span> You can now run cells.';
             text.textContent = 'Initialized';
             btn.className = btn.className.replace('bg-green-600 hover:bg-green-700', 'bg-gray-400');
+
+            for (const cellId of autoRunCells) {
+                await runCell(cellId);
+            }
         } else {
             banner.className = 'mb-6 p-4 rounded-lg bg-red-100 text-red-800';
             banner.innerHTML = `<span class="font-medium">Initialization failed.</span> ${data.errors.join('; ')}`;
@@ -441,7 +445,10 @@ async function resetSession() {
     }
 }
 
-// Initialize markdown rendering
+// All executable cells, in order
+const autoRunCells = [{% for item in cells_data %}{% if item.cell.cell_type != 'markdown' %}{{ item.cell.id }},{% endif %}{% endfor %}];
+
+// Initialize markdown rendering and auto-start
 document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('.markdown-content').forEach(el => {
         el.innerHTML = marked.parse(el.textContent);
@@ -451,6 +458,8 @@ document.addEventListener('DOMContentLoaded', function() {
     document.querySelectorAll('pre code').forEach((block) => {
         hljs.highlightElement(block);
     });
+
+    runSetup();
 });
 </script>
 {% endblock %}
