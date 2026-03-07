@@ -50,6 +50,7 @@ MIDDLEWARE = [
 ]
 
 ROOT_URLCONF = 'tyk_notebook_app.urls_main'
+WSGI_APPLICATION = 'tyk_notebook_app.wsgi.application'
 
 TEMPLATES = [
     {
