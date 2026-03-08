@@ -110,7 +110,7 @@ def main():
     import argparse
 
     parser = argparse.ArgumentParser(description="TyK Notebook Application")
-    parser.add_argument("--port", type=int, default=8000, help="Port to run on")
+    parser.add_argument("--port", type=int, default=8001, help="Port to run on")
     parser.add_argument("--no-browser", action="store_true", help="Don't open browser")
     args = parser.parse_args()
 

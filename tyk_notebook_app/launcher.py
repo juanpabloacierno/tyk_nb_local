@@ -267,7 +267,7 @@ def open_browser(port):
     webbrowser.open(url)
 
 
-def run_server(port=8000, open_browser_flag=True):
+def run_server(port=8001, open_browser_flag=True):
     """Run the development server"""
     from django.core.management import call_command
 
@@ -294,8 +294,8 @@ def main():
     parser.add_argument(
         "--port",
         type=int,
-        default=8000,
-        help="Port to run the server on (default: 8000)",
+        default=8001,
+        help="Port to run the server on (default: 8001)",
     )
     parser.add_argument(
         "--no-browser", action="store_true", help="Don't automatically open browser"
