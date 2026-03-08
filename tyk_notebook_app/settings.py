@@ -22,7 +22,16 @@ else:
 
 PROJECT_ROOT = RUNTIME_DIR
 
-SECRET_KEY = 'tyk-notebook-dev-key-change-in-production-' + os.urandom(16).hex()
+def _load_or_create_secret_key():
+    key_file = DATA_DIR / '.secret_key'
+    try:
+        return key_file.read_text().strip()
+    except FileNotFoundError:
+        key = 'tyk-notebook-dev-key-' + os.urandom(32).hex()
+        key_file.write_text(key)
+        return key
+
+SECRET_KEY = _load_or_create_secret_key()
 
 DEBUG = True
 
