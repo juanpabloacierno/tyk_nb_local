@@ -352,6 +352,7 @@ def dashboard_detail(request, slug):
         ('subclusters_network', 'Subclusters Network', {}),
         ('cooc_network', 'Co-occurrence Network', {'node_type': 'K', 'max_nodes': 80}),
         ('cluster_stats', 'Cluster Details', {}),
+        ('venn_diagram', 'Venn Diagram', {}),
     ]
 
     # Build a lookup of ALL DB-configured charts by chart_type key (active and inactive)
@@ -420,6 +421,17 @@ def render_dashboard_chart(request, slug):
     base_path = getattr(settings, "TYK_DATA_PATH", None)
     if not base_path:
         base_path = os.path.dirname(notebook.source_file)
+
+    # Handle static file charts (no executor needed)
+    if chart_type == "venn_diagram":
+        import glob as glob_module
+        data_path = getattr(settings, "TYK_DATA_PATH", None) or os.path.dirname(notebook.source_file)
+        matches = glob_module.glob(os.path.join(data_path, "**", "venn_interactive.html"), recursive=True)
+        if matches:
+            with open(matches[0], "r", encoding="utf-8") as f:
+                html_content = f.read()
+            return JsonResponse({"success": True, "html": html_content, "stdout": "", "error": "", "execution_time": 0})
+        return JsonResponse({"success": False, "error": "venn_interactive.html not found in dataset"})
 
     executor = session_manager.get_or_create_session(session_key, base_path=base_path)
 

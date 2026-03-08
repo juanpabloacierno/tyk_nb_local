@@ -225,6 +225,7 @@ class NotebookAdmin(admin.ModelAdmin):
             ('subclusters_network', 2),
             ('cooc_network', 3),
             ('cluster_stats', 4),
+            ('venn_diagram', 5),
         ]
         created_total = 0
         for notebook in queryset:
