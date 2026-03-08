@@ -26,7 +26,7 @@ SECRET_KEY = 'tyk-notebook-dev-key-change-in-production-' + os.urandom(16).hex()
 
 DEBUG = True
 
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0', '*']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '0.0.0.0', 'demo.trackyourknowledge.com']
 
 INSTALLED_APPS = [
     'django.contrib.admin',

@@ -14,3 +14,6 @@ data/
 
 # mac stupid stuff
 .DS_Store
+
+.env
+*.zip
