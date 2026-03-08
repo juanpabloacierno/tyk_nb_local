@@ -6,9 +6,11 @@
 {% block nav_container_class %}w-full{% endblock %}
 
 {% block nav_extra %}
+{% if request.user.is_superuser %}
 <a href="{% url 'notebook:detail' notebook.slug %}" class="text-gray-600 hover:text-blue-600 text-sm mr-4">
     {% trans "Classic View" %}
 </a>
+{% endif %}
 <a href="{% url 'notebook:history' notebook.slug %}" class="text-gray-600 hover:text-blue-600 text-sm mr-4" target="_blank">
     {% trans "History" %}
 </a>

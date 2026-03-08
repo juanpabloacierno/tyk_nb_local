@@ -103,7 +103,7 @@
                           </defs>
                         </svg>
 
-                        <span class="ml-2 text-gray-600">{% trans "Notebook" %}</span>
+                        {% if user.is_superuser %}<span class="ml-2 text-gray-600">{% trans "Notebook" %}</span>{% endif %}
                     </a>
                 </div>
                 <div class="flex items-center space-x-4">
@@ -122,9 +122,11 @@
                             {% endfor %}
                         </select>
                     </form>
+                    {% if user.is_superuser %}
                     <a href="{% url 'admin:index' %}" class="text-gray-600 hover:text-gray-900">
                         {% trans "Admin" %}
                     </a>
+                    {% endif %}
                     {% block nav_extra %}{% endblock %}
                     {% if user.is_authenticated %}
                     <span class="text-sm text-gray-600">

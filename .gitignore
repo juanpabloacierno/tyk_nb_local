@@ -17,3 +17,5 @@ data/
 
 .env
 *.zip
+tyk_notebook_app/db.sqlite3
+tyk_notebook_app/.secret_key
