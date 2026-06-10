@@ -422,18 +422,25 @@ def render_dashboard_chart(request, slug):
     if not base_path:
         base_path = os.path.dirname(notebook.source_file)
 
-    # Handle static file charts (no executor needed)
-    if chart_type == "venn_diagram":
-        import glob as glob_module
-        data_path = getattr(settings, "TYK_DATA_PATH", None) or os.path.dirname(notebook.source_file)
-        matches = glob_module.glob(os.path.join(data_path, "**", "venn_interactive.html"), recursive=True)
-        if matches:
-            with open(matches[0], "r", encoding="utf-8") as f:
-                html_content = f.read()
-            return JsonResponse({"success": True, "html": html_content, "stdout": "", "error": "", "execution_time": 0})
-        return JsonResponse({"success": False, "error": "venn_interactive.html not found in dataset"})
-
     executor = session_manager.get_or_create_session(session_key, base_path=base_path)
+
+    # Handle static file charts
+    if chart_type == "venn_diagram":
+        tyk_obj = executor.get_variable("tyk")
+        if tyk_obj and getattr(tyk_obj, "dat_folder", None):
+            path_var = tyk_obj.dat_folder
+        elif tyk_obj and getattr(tyk_obj, "path_base", None):
+            path_var = tyk_obj.path_base
+        else:
+            path_var = executor.get_variable("PATH")
+        if not path_var:
+            return JsonResponse({"success": False, "error": "PATH not set. Please run setup first.", "needs_setup": True})
+        venn_path = os.path.join(path_var, "venn_interactive.html")
+        if not os.path.isfile(venn_path):
+            return JsonResponse({"success": False, "error": f"venn_interactive.html not found at {venn_path}"})
+        with open(venn_path, "r", encoding="utf-8") as f:
+            html_content = f.read()
+        return JsonResponse({"success": True, "html": html_content, "stdout": "", "error": "", "execution_time": 0})
 
     # Check if TyK is initialized in session
     if "tyk" not in executor.namespace:

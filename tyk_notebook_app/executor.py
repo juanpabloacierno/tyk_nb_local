@@ -286,6 +286,7 @@ def create_mock_ipython_display(html_outputs=None):
     # Also create parent IPython module if needed
     mock_ipython = ModuleType('IPython')
     mock_ipython.display = mock_module
+    mock_ipython.get_ipython = lambda: None
 
     # Create IPython.core.display for direct imports
     mock_core = ModuleType('IPython.core')

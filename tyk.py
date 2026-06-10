@@ -26,7 +26,7 @@ from collections import defaultdict
 from matplotlib import cm, colormaps, colors as mcolors
 import webbrowser
 import pandas as pd
-
+import random
 
 class TyK:
     def __init__(
@@ -340,7 +340,7 @@ class TyK:
 
       for cid, node in self.cluster_dict.items():
           lvl = int(node.get("level", 0))
-
+          raw = f"raw_label_{random.randint(100, 999)}"
           # Si el TEX ya definió label para este ID, lo usamos
           label_from_tex = None
           if   (lvl == 0 and cid in self.label_map_top): label_from_tex = self.label_map_top[cid]
@@ -1184,13 +1184,8 @@ class TyK:
             )
 
         # ---- Mostrar el mapa ----
-        try:
-            import plotly.io as pio
-            pio.show(fig)
-        except Exception:
-            from IPython.display import HTML, display
-            import plotly.io as pio
-            display(HTML(pio.to_html(fig, include_plotlyjs="cdn", full_html=False)))
+        import plotly.io as pio
+        display(HTML(pio.to_html(fig, include_plotlyjs="cdn", full_html=False)))
 
             #SIMPLE:
     # def plot_countries_map_global(self, *, engine: str = "plotly", height: int = 620, colorscale: str = "YlOrRd"):
@@ -2027,12 +2022,9 @@ class TyK:
         html += "</tbody></table></div>"
         display(HTML(html))
 
-    def _show_figure(self, fig: go.Figure) -> None:  #Muestra figuras de Plotly directamente (con fallback HTML si hace falta).
-      try:
-          pio.show(fig)
-      except Exception:
-          html = pio.to_html(fig, include_plotlyjs="cdn", full_html=False)
-          display(HTML(html))
+    def _show_figure(self, fig: go.Figure) -> None:
+        html = pio.to_html(fig, include_plotlyjs="cdn", full_html=False)
+        display(HTML(html))
 
     def _build_figure(self, cluster_data: Dict[str, Any], stuff_type: str) -> Optional[go.Figure]:
         cid = str(cluster_data.get("name"))
