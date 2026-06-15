@@ -18,6 +18,84 @@ from .models import Notebook, Cell, Parameter, Execution, NotebookSession, Dashb
 from .executor import session_manager
 from .importer import export_notebook
 
+# Injected after every venn_interactive.html to enforce the INeS_GPE color scheme.
+# Singles are light/pastel; pairwise intersections are mid-saturated; triple is darkest.
+# Opacity increases with overlap depth so intersections stand out clearly.
+_VENN_STYLE_OVERRIDE = """
+<script>
+(function() {
+    var TYK_SINGLE_COLORS = ["#c7e9b4", "#7fcdbb", "#1d91c0"];
+    var TYK_PAIR_COLORS   = ["#a4dbc0", "#74c6c2", "#41b6c4"];
+    var TYK_TRIPLE_COLOR  = "#225ea8";
+
+    function applyTykVennStyle() {
+        if (typeof d3 === "undefined" || d3.select("#venn").empty()) {
+            setTimeout(applyTykVennStyle, 50);
+            return;
+        }
+
+        // --- Venn diagram paths and labels ---
+        var div = d3.select("#venn");
+        var singleIdx = 0, pairIdx = 0;
+        var renderedColors = [];
+        div.selectAll("g").each(function(d) {
+            if (!d || !d.sets) return;
+            var g = d3.select(this);
+            var path = g.select("path");
+            var color;
+
+            if (d.sets.length === 1) {
+                color = TYK_SINGLE_COLORS[singleIdx++ % TYK_SINGLE_COLORS.length];
+                path.style("fill", color)
+                    .style("fill-opacity", 0.45)
+                    .style("stroke", "#ffffff")
+                    .style("stroke-width", "1.5px");
+            } else if (d.sets.length === 2) {
+                color = TYK_PAIR_COLORS[pairIdx++ % TYK_PAIR_COLORS.length];
+                path.style("fill", color)
+                    .style("fill-opacity", 0.72)
+                    .style("stroke", "#ffffff")
+                    .style("stroke-width", "1.5px");
+            } else {
+                color = TYK_TRIPLE_COLOR;
+                path.style("fill", color)
+                    .style("fill-opacity", 0.88)
+                    .style("stroke", "#ffffff")
+                    .style("stroke-width", "1.5px");
+            }
+            renderedColors.push(color);
+
+            g.select("text")
+                .style("fill", "#f0f4f8")
+                .style("stroke", "#1a2e40")
+                .style("stroke-width", "2.5px")
+                .style("paint-order", "stroke")
+                .style("font-size", "14px")
+                .style("font-weight", "bold");
+        });
+
+        // --- Stats table: color dots — use the exact colors rendered on the chart ---
+        var dots = document.querySelectorAll(".color-dot");
+        dots.forEach(function(dot, i) {
+            dot.style.background = renderedColors[i] || TYK_TRIPLE_COLOR;
+        });
+
+        // --- Stats table: header and highlight row backgrounds ---
+        document.querySelectorAll(".stats-table th").forEach(function(th) {
+            th.style.background = "#eef2f7";
+        });
+        document.querySelectorAll(".stats-table tr").forEach(function(tr) {
+            if (tr.style.background && tr.style.background !== "") {
+                tr.style.background = "#eef2f7";
+            }
+        });
+    }
+
+    applyTykVennStyle();
+})();
+</script>
+"""
+
 
 @login_required
 def notebook_list(request):
@@ -440,6 +518,7 @@ def render_dashboard_chart(request, slug):
             return JsonResponse({"success": False, "error": f"venn_interactive.html not found at {venn_path}"})
         with open(venn_path, "r", encoding="utf-8") as f:
             html_content = f.read()
+        html_content += _VENN_STYLE_OVERRIDE
         return JsonResponse({"success": True, "html": html_content, "stdout": "", "error": "", "execution_time": 0})
 
     # Check if TyK is initialized in session
