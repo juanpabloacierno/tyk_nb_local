@@ -1782,7 +1782,6 @@ class TyK:
         show_top_col = level == "SUB" and not top_id
         if level == "TOP":
             thead = (
-                "<th style='padding:10px;text-align:left'>#</th>"
                 "<th style='padding:10px;text-align:left'>ID</th>"
                 "<th style='padding:10px;text-align:left'>Nombre</th>"
                 "<th style='padding:10px;text-align:right'>Artículos</th>"
@@ -1790,7 +1789,6 @@ class TyK:
             )
         else:
             thead = (
-                "<th style='padding:10px;text-align:left'>#</th>"
                 "<th style='padding:10px;text-align:left'>ID</th>"
                 "<th style='padding:10px;text-align:left'>Nombre</th>"
                 "<th style='padding:10px;text-align:right'>Artículos</th>"
@@ -1802,7 +1800,7 @@ class TyK:
             )
 
         rows_html = []
-        for i, (cid, name) in enumerate(pairs, start=1):
+        for cid, name in pairs:
             c = self.cluster_dict.get(cid, {})
             size = int(c.get("size", 0))
             if level == "TOP":
@@ -1827,7 +1825,6 @@ class TyK:
 
             rows_html.append(
                 "<tr>"
-                f"<td style='padding:8px 12px'>{i}</td>"
                 f"<td style='padding:8px 12px'><code>{cid}</code></td>"
                 f"<td style='padding:8px 12px'>{name}</td>"
                 f"<td style='padding:8px 12px; text-align:right'>{size}</td>"
@@ -4483,10 +4480,9 @@ class TyK:
         if not pairs:
             return
         rows = "".join(
-            f"<tr><td style='padding:4px 8px'>{i + 1}</td>"
-            f"<td style='padding:4px 8px'>{name}</td>"
+            f"<tr><td style='padding:4px 8px'>{name}</td>"
             f"<td style='padding:4px 8px'>{cid}</td></tr>"
-            for i, (cid, name) in enumerate(pairs[:limit])
+            for cid, name in pairs[:limit]
         )
         if open:
             detail_txt = (
@@ -4501,8 +4497,7 @@ class TyK:
                 f"{detail_txt}"
                 f"{title} (top {min(limit, len(pairs))}/{len(pairs)})</summary>"
                 "<table style='border-collapse:collapse;margin-top:6px'>"
-                "<thead><tr><th style='text-align:left;padding:4px 8px'>#</th>"
-                "<th style='text-align:left;padding:4px 8px'>Nombre</th>"
+                "<thead><tr><th style='text-align:left;padding:4px 8px'>Nombre</th>"
                 "<th style='text-align:left;padding:4px 8px'>ID</th></tr></thead>"
                 f"<tbody>{rows}</tbody></table></details>"
             )
@@ -4604,6 +4599,66 @@ class TyK:
                 f"<div style='font-family:sans-serif; padding:10px 12px; border:1px solid {fg}; "
                 f"border-radius:6px; background:{bg}; color:#111; line-height:1.4'>{msg}</div>"
             )
+        )
+
+    def sync_notebook_params(self, param_name: str = "top_cluster") -> None:
+        """
+        Update dropdown options for `param_name` in every notebook cell that uses
+        this instance's path_base, pulling the current TOP cluster IDs from memory.
+
+        Call this once after `tyk = TyK(path_base=PATH)` in a notebook cell so the
+        dropdown always reflects what is actually loaded. Options are persisted in the
+        Django DB and can also be edited manually in the admin.
+        """
+        top_ids = sorted(
+            self.label_map_top.keys(),
+            key=lambda x: int(x) if x.isdigit() else x,
+        )
+        if not top_ids:
+            self._notify(
+                "sync_notebook_params: no TOP clusters loaded — nothing to sync.", "warn"
+            )
+            return
+
+        try:
+            from tyk_notebook_app.models import Cell, Parameter
+        except Exception as exc:
+            self._notify(
+                f"sync_notebook_params: cannot import Django models ({exc}).", "error"
+            )
+            return
+
+        path_str = self.path_base.replace("\\", "/").rstrip("/")
+
+        # Find all notebooks that have a cell referencing this path_base
+        notebook_ids = set(
+            Cell.objects.filter(source_code__icontains=path_str).values_list(
+                "notebook_id", flat=True
+            )
+        )
+        if not notebook_ids:
+            self._notify(
+                f"sync_notebook_params: no notebooks found with path <code>{path_str}</code>.",
+                "warn",
+            )
+            return
+
+        params = Parameter.objects.filter(
+            name=param_name, cell__notebook_id__in=notebook_ids
+        )
+        updated = 0
+        for param in params:
+            param.param_type = "dropdown"
+            param.options = top_ids
+            if str(param.default_value) not in top_ids:
+                param.default_value = top_ids[0]
+            param.save()
+            updated += 1
+
+        self._notify(
+            f"sync_notebook_params: updated <b>{updated}</b> <code>{param_name}</code> "
+            f"parameter(s) with <b>{len(top_ids)}</b> TOP clusters: {', '.join(top_ids)}.",
+            "success",
         )
 
     def rename_cluster(

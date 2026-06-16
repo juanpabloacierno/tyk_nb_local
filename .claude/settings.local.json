@@ -19,7 +19,8 @@
       "Bash(python:*)",
       "Bash(open:*)",
       "Bash(.venv/bin/python:*)",
-      "Bash(DJANGO_SETTINGS_MODULE=tyk_notebook_app.settings .venv/bin/python:*)"
+      "Bash(DJANGO_SETTINGS_MODULE=tyk_notebook_app.settings .venv/bin/python:*)",
+      "Bash(uv run *)"
     ]
   }
 }
