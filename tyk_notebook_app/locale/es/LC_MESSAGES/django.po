@@ -23,6 +23,9 @@ msgstr "Inglés"
 msgid "Spanish"
 msgstr "Español"
 
+msgid "Portuguese"
+msgstr "Portugués"
+
 # Admin site headers
 msgid "TyK Tools Administration"
 msgstr "Administración de TyK Tools"
@@ -364,3 +367,316 @@ msgstr "¡Éxito!"
 
 msgid "Your password has been reset successfully!"
 msgstr "¡Tu contraseña ha sido restablecida exitosamente!"
+
+# JavaScript UI strings - detail page
+msgid "Initializing..."
+msgstr "Inicializando..."
+
+msgid "Initialization failed."
+msgstr "Inicialización fallida."
+
+msgid "Initialized"
+msgstr "Inicializado"
+
+msgid "Retry"
+msgstr "Reintentar"
+
+msgid "Error:"
+msgstr "Error:"
+
+msgid "Running..."
+msgstr "Ejecutando..."
+
+msgid "Reset the notebook session? This will clear all execution state."
+msgstr "¿Reiniciar la sesión del cuaderno? Esto borrará todo el estado de ejecución."
+
+msgid "Failed to reset session: "
+msgstr "Error al reiniciar la sesión: "
+
+# JavaScript UI strings - dashboard page
+msgid "Loading dashboard..."
+msgstr "Cargando dashboard..."
+
+msgid "Failed:"
+msgstr "Fallido:"
+
+msgid "Loading..."
+msgstr "Cargando..."
+
+msgid "No output"
+msgstr "Sin salida"
+
+msgid "Initialize notebook first"
+msgstr "Primero inicializa el cuaderno"
+
+msgid "Please initialize the notebook first"
+msgstr "Por favor, primero inicializa el cuaderno"
+
+msgid "Reset the notebook session?"
+msgstr "¿Reiniciar la sesión del cuaderno?"
+
+msgid "Failed to reset: "
+msgstr "Error al reiniciar: "
+
+# Admin - import notebook page
+msgid "Import Notebook"
+msgstr "Importar Cuaderno"
+
+msgid "Upload a Python script (.py) or Jupyter notebook (.ipynb) file to import it into the system."
+msgstr "Sube un script de Python (.py) o un cuaderno Jupyter (.ipynb) para importarlo al sistema."
+
+msgid "Notebook File"
+msgstr "Archivo de Cuaderno"
+
+msgid "Notebook Details (Optional)"
+msgstr "Detalles del Cuaderno (Opcional)"
+
+msgid "Import Options"
+msgstr "Opciones de Importación"
+
+msgid "Cancel"
+msgstr "Cancelar"
+
+# TyK class - stuff_titles
+msgid "Publications by year"
+msgstr "Publicaciones por año"
+
+msgid "Most Cited Articles"
+msgstr "Artículos más citados"
+
+msgid "Most Representative Articles"
+msgstr "Artículos más representativos"
+
+msgid "Most Cited Authors"
+msgstr "Autores más citados"
+
+msgid "Subject Categories"
+msgstr "Categorías temáticas"
+
+msgid "Subject Sub-Categories"
+msgstr "Sub-categorías temáticas"
+
+msgid "Journal Sources"
+msgstr "Fuentes de revista"
+
+msgid "References"
+msgstr "Referencias"
+
+msgid "Reference Sources"
+msgstr "Fuentes de referencia"
+
+msgid "Authors (Freq)"
+msgstr "Autores (Frec)"
+
+# TyK class - chart titles and defaults
+msgid "Cluster Graph (TOP)"
+msgstr "Grafo de Clusters (TOP)"
+
+msgid "Co-occurrence network"
+msgstr "Red de co-ocurrencia"
+
+#, python-brace-format
+msgid "Subclusters of {label}"
+msgstr "Subclusters de {label}"
+
+# TyK class - map labels
+msgid "Articles: "
+msgstr "Artículos: "
+
+msgid "Frequency: "
+msgstr "Frecuencia: "
+
+msgid "Value: "
+msgstr "Valor: "
+
+msgid "Frequency (%)"
+msgstr "Frecuencia (%)"
+
+msgid "Amount"
+msgstr "Cantidad"
+
+msgid "Countries — Global distribution of publications"
+msgstr "Países — Distribución global de publicaciones"
+
+#, python-brace-format
+msgid "Countries — Cluster {id}"
+msgstr "Países — Clúster {id}"
+
+# TyK class - vis network
+msgid "Size"
+msgstr "Tamaño"
+
+msgid "Edge threshold"
+msgstr "Umbral arista"
+
+msgid "No summary available."
+msgstr "Sin resumen disponible."
+
+msgid "View full report"
+msgstr "Ver reporte completo"
+
+# TyK class - clusters table
+msgid "No TOP clusters available."
+msgstr "No hay clusters TOP disponibles."
+
+#, python-brace-format
+msgid "TOP <b>{top}</b> has no subclusters."
+msgstr "El TOP <b>{top}</b> no tiene subclusters."
+
+msgid "No subclusters to display."
+msgstr "No hay subclusters para mostrar."
+
+msgid "Name"
+msgstr "Nombre"
+
+msgid "Articles"
+msgstr "Artículos"
+
+msgid "Subclusters"
+msgstr "Subclusters"
+
+#, python-brace-format
+msgid "Available <b>TOP</b> Clusters (total: {total})"
+msgstr "Clusters <b>TOP</b> disponibles (total: {total})"
+
+#, python-brace-format
+msgid "Subclusters of <b>{top}</b> (ID {id}) (total: {total})"
+msgstr "Subclusters de <b>{top}</b> (ID {id}) (total: {total})"
+
+#, python-brace-format
+msgid "Available Subclusters (total: {total})"
+msgstr "Subclusters disponibles (total: {total})"
+
+# TyK class - describe_cluster_params
+#, python-brace-format
+msgid "Invalid level: <b>{level}</b>. Use <b>TOP</b> or <b>SUB</b>."
+msgstr "Nivel inválido: <b>{level}</b>. Usá <b>TOP</b> o <b>SUB</b>."
+
+msgid "Available TOP Clusters"
+msgstr "Clusters TOP disponibles"
+
+msgid "Specify <b>cluster_top</b> (ID or name) to visualize."
+msgstr "Indique <b>cluster_top</b> (ID o nombre) para visualizar."
+
+#, python-brace-format
+msgid "TOP <b>{top}</b> not found."
+msgstr "TOP <b>{top}</b> no encontrado."
+
+msgid "Level: "
+msgstr "Nivel: "
+
+msgid "Cluster: "
+msgstr "Cluster: "
+
+msgid "Type: "
+msgstr "Tipo: "
+
+msgid "Specify <b>cluster_sub</b> (ID or name) to visualize."
+msgstr "Indique <b>cluster_sub</b> (ID o nombre) para visualizar."
+
+#, python-brace-format
+msgid "Subclusters of TOP {name} (ID {id})"
+msgstr "Subclusters del TOP {name} (ID {id})"
+
+#, python-brace-format
+msgid "SUB <b>{sub}</b> does not exist in TOP <b>{top}</b> (ID {id})."
+msgstr "El SUB <b>{sub}</b> no existe dentro del TOP <b>{top}</b> (ID {id})."
+
+# TyK class - build_figure
+#, python-brace-format
+msgid "{name}: no data for <b>{type}</b>."
+msgstr "{name}: sin datos para <b>{type}</b>."
+
+msgid "Year"
+msgstr "Año"
+
+msgid "No. articles"
+msgstr "N° artículos"
+
+msgid "articles"
+msgstr "artículos"
+
+msgid "Lower weight"
+msgstr "Menor ponderación"
+
+msgid "Higher weight"
+msgstr "Mayor ponderación"
+
+msgid "Frequency"
+msgstr "Frecuencia"
+
+msgid "Size (articles)"
+msgstr "Tamaño (artículos)"
+
+#, python-brace-format
+msgid "Edge threshold: ≥ {threshold}"
+msgstr "Umbral arista: ≥ {threshold}"
+
+# TyK class - load_cluster_summaries
+#, python-brace-format
+msgid "Summaries loaded: <b>{count}</b>"
+msgstr "Resúmenes cargados: <b>{count}</b>"
+
+# TyK class - rename_cluster
+msgid "The parameter <b>level</b> must be 'TOP' or 'SUB'."
+msgstr "El parámetro <b>level</b> debe ser 'TOP' o 'SUB'."
+
+msgid "Specify a <b>cluster</b> (ID or name) to rename."
+msgstr "Indicá un <b>cluster</b> (ID o nombre) para renombrar."
+
+msgid "Specify the <b>new name</b> (new_name) to rename."
+msgstr "Indicá el <b>nuevo nombre</b> (new_name) para renombrar."
+
+#, python-brace-format
+msgid "<b>Renamed successfully</b> — Level: <b>{level}</b> · ID: <code>{id}</code> · <i>{old}</i> → <b>{new}</b>"
+msgstr "<b>Renombrado correcto</b> — Nivel: <b>{level}</b> · ID: <code>{id}</code> · <i>{old}</i> → <b>{new}</b>"
+
+#, python-brace-format
+msgid "SUB <code>{sid}</code> does not belong to the specified TOP (<b>{top}</b>, ID <code>{id}</code>)."
+msgstr "El SUB <code>{sid}</code> no pertenece al TOP indicado (<b>{top}</b>, ID <code>{id}</code>)."
+
+#, python-brace-format
+msgid "SUB <b>{sub}</b> not found."
+msgstr "SUB <b>{sub}</b> no encontrado."
+
+msgid "If the name exists in more than one TOP, also specify <b>top_id</b> (ID or name of the TOP)."
+msgstr "Si el nombre existe en más de un TOP, indicá también <b>top_id</b> (ID o nombre del TOP)."
+
+msgid "The specified name matches multiple SUBs in different TOPs. Specify <b>top_id</b> to disambiguate:"
+msgstr "El nombre indicado coincide con múltiples SUB en distintos TOP. Indicá <b>top_id</b> para desambiguar:"
+
+# TyK class - notifications
+#, python-brace-format
+msgid "TOP <b>{top}</b> not found (use ID or exact name)."
+msgstr "TOP <b>{top}</b> no encontrado (usá ID o nombre exacto)."
+
+msgid "No co-occurrence data loaded. Cannot plot network."
+msgstr "Sin datos de co-ocurrencia cargados. No es posible graficar la red."
+
+#, python-brace-format
+msgid "No nodes of type <b>{type}</b> found."
+msgstr "No se encontraron nodos del tipo <b>{type}</b>."
+
+msgid "size: "
+msgstr "tamaño: "
+
+msgid "<b>BCclusters.json</b> not found. Some functions may not be available."
+msgstr "<b>BCclusters.json</b> no encontrado. Algunas funciones pueden no estar disponibles."
+
+msgid "No global country data available. Run tyk.refresh_aggregates()."
+msgstr "No hay datos globales de países. Ejecute tyk.refresh_aggregates()."
+
+msgid "Could not map countries to ISO3 codes."
+msgstr "No se pudieron mapear países a códigos ISO3."
+
+#, python-brace-format
+msgid "No country distribution (C) for cluster {id}."
+msgstr "No hay distribución de países (C) para el clúster {id}."
+
+#, python-brace-format
+msgid "Could not build country table for cluster {id}."
+msgstr "No se pudo construir la tabla de países para el clúster {id}."
+
+#, python-brace-format
+msgid "Could not map countries to ISO3 for cluster {id}."
+msgstr "No se pudieron mapear países a ISO3 para el clúster {id}."

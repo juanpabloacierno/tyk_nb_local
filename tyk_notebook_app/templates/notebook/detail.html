@@ -209,6 +209,21 @@ trace_log()          # {% trans "Show all traces" %}</code></pre>
 
 {% block extra_js %}
 <script>
+const i18n = {
+    initializing: "{% trans 'Initializing...' %}",
+    initialized: "{% trans 'Initialized' %}",
+    initFailed: "{% trans 'Initialization failed.' %}",
+    retry: "{% trans 'Retry' %}",
+    errorPrefix: "{% trans 'Error:' %}",
+    running: "{% trans 'Running...' %}",
+    run: "{% trans 'Run' %}",
+    notebookInitialized: "{% trans 'Notebook initialized.' %}",
+    youCanNowRun: "{% trans 'You can now run cells.' %}",
+    confirmReset: "{% trans 'Reset the notebook session? This will clear all execution state.' %}",
+    failedReset: "{% trans 'Failed to reset session: ' %}",
+};
+</script>
+<script>
 const notebookSlug = '{{ notebook.slug }}';
 
 // Debounce helper for text inputs
@@ -273,7 +288,7 @@ async function runSetup() {
 
     btn.disabled = true;
     spinner.classList.remove('hidden');
-    text.textContent = 'Initializing...';
+    text.textContent = i18n.initializing;
 
     try {
         const response = await fetch(`/notebook/${notebookSlug}/setup/`, {
@@ -288,8 +303,8 @@ async function runSetup() {
 
         if (data.success) {
             banner.className = 'mb-6 p-4 rounded-lg bg-green-100 text-green-800';
-            banner.innerHTML = '<span class="font-medium">Notebook initialized.</span> You can now run cells.';
-            text.textContent = 'Initialized';
+            banner.innerHTML = `<span class="font-medium">${i18n.notebookInitialized}</span> ${i18n.youCanNowRun}`;
+            text.textContent = i18n.initialized;
             btn.className = btn.className.replace('bg-green-600 hover:bg-green-700', 'bg-gray-400');
 
             for (const cellId of autoRunCells) {
@@ -297,16 +312,16 @@ async function runSetup() {
             }
         } else {
             banner.className = 'mb-6 p-4 rounded-lg bg-red-100 text-red-800';
-            banner.innerHTML = `<span class="font-medium">Initialization failed.</span> ${data.errors.join('; ')}`;
-            text.textContent = 'Retry';
+            banner.innerHTML = `<span class="font-medium">${i18n.initFailed}</span> ${data.errors.join('; ')}`;
+            text.textContent = i18n.retry;
             btn.disabled = false;
 
             console.log(data.errors);
         }
     } catch (error) {
         banner.className = 'mb-6 p-4 rounded-lg bg-red-100 text-red-800';
-        banner.innerHTML = `<span class="font-medium">Error:</span> ${error.message}`;
-        text.textContent = 'Retry';
+        banner.innerHTML = `<span class="font-medium">${i18n.errorPrefix}</span> ${error.message}`;
+        text.textContent = i18n.retry;
         btn.disabled = false;
     }
 
@@ -337,7 +352,7 @@ async function runCell(cellId) {
     // Show loading state
     btn.disabled = true;
     spinner.classList.remove('hidden');
-    btnText.textContent = 'Running...';
+    btnText.textContent = i18n.running;
 
     try {
         const response = await fetch(`/cell/${cellId}/run/`, {
@@ -421,12 +436,12 @@ async function runCell(cellId) {
     // Reset button
     btn.disabled = false;
     spinner.classList.add('hidden');
-    btnText.textContent = 'Run';
+    btnText.textContent = i18n.run;
 }
 
 // Reset session
 async function resetSession() {
-    if (!confirm('Reset the notebook session? This will clear all execution state.')) {
+    if (!confirm(i18n.confirmReset)) {
         return;
     }
 
@@ -439,7 +454,7 @@ async function resetSession() {
         });
         window.location.reload();
     } catch (error) {
-        alert('Failed to reset session: ' + error.message);
+        alert(i18n.failedReset + error.message);
     }
 }
 

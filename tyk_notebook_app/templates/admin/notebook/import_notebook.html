@@ -3,15 +3,15 @@
 
 {% block content %}
 <div id="content-main">
-    <h1>Import Notebook</h1>
+    <h1>{% trans "Import Notebook" %}</h1>
 
-    <p>Upload a Python script (.py) or Jupyter notebook (.ipynb) file to import it into the system.</p>
+    <p>{% trans "Upload a Python script (.py) or Jupyter notebook (.ipynb) file to import it into the system." %}</p>
 
     <form method="post" enctype="multipart/form-data">
         {% csrf_token %}
 
         <fieldset class="module aligned">
-            <h2>Notebook File</h2>
+            <h2>{% trans "Notebook File" %}</h2>
 
             <div class="form-row">
                 <div>
@@ -32,7 +32,7 @@
         </fieldset>
 
         <fieldset class="module aligned">
-            <h2>Notebook Details (Optional)</h2>
+            <h2>{% trans "Notebook Details (Optional)" %}</h2>
 
             <div class="form-row">
                 <div>
@@ -56,7 +56,7 @@
         </fieldset>
 
         <fieldset class="module aligned">
-            <h2>Import Options</h2>
+            <h2>{% trans "Import Options" %}</h2>
 
             <div class="form-row">
                 <div class="checkbox-row">
@@ -70,8 +70,8 @@
         </fieldset>
 
         <div class="submit-row">
-            <input type="submit" value="Import Notebook" class="default">
-            <a href="{% url 'admin:tyk_notebook_app_notebook_changelist' %}" class="button cancel-link">Cancel</a>
+            <input type="submit" value="{% trans 'Import Notebook' %}" class="default">
+            <a href="{% url 'admin:tyk_notebook_app_notebook_changelist' %}" class="button cancel-link">{% trans "Cancel" %}</a>
         </div>
     </form>
 </div>

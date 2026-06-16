@@ -20,7 +20,11 @@
       "Bash(open:*)",
       "Bash(.venv/bin/python:*)",
       "Bash(DJANGO_SETTINGS_MODULE=tyk_notebook_app.settings .venv/bin/python:*)",
-      "Bash(uv run *)"
+      "Bash(uv run *)",
+      "Bash(msgfmt --version)",
+      "Bash(/opt/homebrew/bin/msgfmt tyk_notebook_app/locale/es/LC_MESSAGES/django.po -o tyk_notebook_app/locale/es/LC_MESSAGES/django.mo)",
+      "Bash(/opt/homebrew/bin/msgfmt tyk_notebook_app/locale/pt/LC_MESSAGES/django.po -o tyk_notebook_app/locale/pt/LC_MESSAGES/django.mo)",
+      "Bash(grep *)"
     ]
   }
 }

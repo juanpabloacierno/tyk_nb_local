@@ -136,7 +136,7 @@
                             {{ item.cell.order|add:1 }}
                         </span> -->
                         <h3 class="font-medium text-sm text-gray-900 truncate" style="max-width: 250px;">
-                            {{ item.cell.title|default:"Untitled" }}
+                            {{ item.cell.title|default:_("Untitled") }}
                         </h3>
                     </div>
                     <button onclick="runCell({{ item.cell.id }})"
@@ -210,6 +210,24 @@
 
 {% block extra_js %}
 <script>
+const i18n = {
+    initializing: "{% trans 'Initializing...' %}",
+    ready: "{% trans 'Ready' %}",
+    readyStatus: "{% trans 'Ready.' %}",
+    loadingDashboard: "{% trans 'Loading dashboard...' %}",
+    failed: "{% trans 'Failed:' %}",
+    retry: "{% trans 'Retry' %}",
+    errorPrefix: "{% trans 'Error:' %}",
+    run: "{% trans 'Run' %}",
+    loading: "{% trans 'Loading...' %}",
+    noOutput: "{% trans 'No output' %}",
+    initFirst: "{% trans 'Initialize notebook first' %}",
+    pleaseInit: "{% trans 'Please initialize the notebook first' %}",
+    confirmReset: "{% trans 'Reset the notebook session?' %}",
+    failedReset: "{% trans 'Failed to reset: ' %}",
+};
+</script>
+<script>
 const notebookSlug = '{{ notebook.slug }}';
 let isSetupComplete = {{ setup_complete|yesno:"true,false" }};
 
@@ -281,7 +299,7 @@ async function refreshChart(chartType) {
         }
     });
 
-    container.innerHTML = '<div class="text-gray-400 text-center py-12 text-sm">Loading...</div>';
+    container.innerHTML = `<div class="text-gray-400 text-center py-12 text-sm">${i18n.loading}</div>`;
 
     try {
         const response = await fetch(`/dashboard/${notebookSlug}/chart/`, {
@@ -304,22 +322,22 @@ async function refreshChart(chartType) {
             } else if (data.stdout) {
                 container.innerHTML = '<pre class="text-xs p-2 overflow-auto">' + data.stdout + '</pre>';
             } else {
-                container.innerHTML = '<div class="text-gray-400 text-center py-8 text-sm">No output</div>';
+                container.innerHTML = `<div class="text-gray-400 text-center py-8 text-sm">${i18n.noOutput}</div>`;
             }
         } else if (data.needs_setup) {
-            container.innerHTML = '<div class="text-yellow-600 text-center py-8 text-sm">Initialize notebook first</div>';
+            container.innerHTML = `<div class="text-yellow-600 text-center py-8 text-sm">${i18n.initFirst}</div>`;
         } else {
             container.innerHTML = '<div class="text-red-500 text-center py-4 text-xs p-2">' + (data.error || 'Unknown error') + '</div>';
         }
     } catch (error) {
-        container.innerHTML = '<div class="text-red-500 text-center py-4 text-xs">Error: ' + error.message + '</div>';
+        container.innerHTML = `<div class="text-red-500 text-center py-4 text-xs">${i18n.errorPrefix} ${error.message}</div>`;
     }
 }
 
 // Refresh all charts
 async function refreshAllCharts() {
     if (!isSetupComplete) {
-        alert('Please initialize the notebook first');
+        alert(i18n.pleaseInit);
         return;
     }
 
@@ -338,7 +356,7 @@ async function runSetup() {
 
     btn.disabled = true;
     spinner.classList.remove('hidden');
-    text.textContent = 'Initializing...';
+    text.textContent = i18n.initializing;
 
     try {
         const response = await fetch(`/notebook/${notebookSlug}/setup/`, {
@@ -353,8 +371,8 @@ async function runSetup() {
 
         if (data.success) {
             banner.className = 'mb-3 px-4 py-2 rounded-lg text-sm bg-green-100 text-green-800';
-            banner.innerHTML = '<span class="font-medium">Ready.</span> Loading dashboard...';
-            text.textContent = 'Ready';
+            banner.innerHTML = `<span class="font-medium">${i18n.readyStatus}</span> ${i18n.loadingDashboard}`;
+            text.textContent = i18n.ready;
             isSetupComplete = true;
 
             for (const cellId of autoRunCells) {
@@ -365,14 +383,14 @@ async function runSetup() {
             banner.classList.add('hidden');
         } else {
             banner.className = 'mb-3 px-4 py-2 rounded-lg text-sm bg-red-100 text-red-800';
-            banner.innerHTML = '<span class="font-medium">Failed:</span> ' + data.errors.join('; ');
-            text.textContent = 'Retry';
+            banner.innerHTML = `<span class="font-medium">${i18n.failed}</span> ` + data.errors.join('; ');
+            text.textContent = i18n.retry;
             btn.disabled = false;
         }
     } catch (error) {
         banner.className = 'mb-3 px-4 py-2 rounded-lg text-sm bg-red-100 text-red-800';
-        banner.innerHTML = '<span class="font-medium">Error:</span> ' + error.message;
-        text.textContent = 'Retry';
+        banner.innerHTML = `<span class="font-medium">${i18n.errorPrefix}</span> ` + error.message;
+        text.textContent = i18n.retry;
         btn.disabled = false;
     }
 
@@ -441,12 +459,12 @@ async function runCell(cellId) {
 
     btn.disabled = false;
     spinner.classList.add('hidden');
-    btnText.textContent = 'Run';
+    btnText.textContent = i18n.run;
 }
 
 // Reset session
 async function resetSession() {
-    if (!confirm('Reset the notebook session?')) return;
+    if (!confirm(i18n.confirmReset)) return;
 
     try {
         await fetch(`/notebook/${notebookSlug}/reset/`, {
@@ -455,7 +473,7 @@ async function resetSession() {
         });
         window.location.reload();
     } catch (error) {
-        alert('Failed to reset: ' + error.message);
+        alert(i18n.failedReset + error.message);
     }
 }
 

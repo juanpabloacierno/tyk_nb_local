@@ -39,6 +39,12 @@ try:
 except Exception:  # pragma: no cover - optional dependency
     pycountry = None
 
+try:
+    from django.utils.translation import gettext as _
+except ImportError:
+    def _(s):  # type: ignore[misc]
+        return s
+
 
 class TyK:
     def __init__(
@@ -120,22 +126,6 @@ class TyK:
 
         self.verbose_notify: bool = True
         self.removed_clusters: set[str] = set()
-        self.stuff_titles: dict[str, str] = {
-            "K": "Keywords",
-            "TK": "Title Words",
-            "S": "Subject Categories",
-            "S2": "Subject Sub-Categories",
-            "J": "Journal Sources",
-            "C": "Countries",
-            "I": "Institutions",
-            "R": "References",
-            "RJ": "Reference Sources",
-            "A": "Authors (Freq)",
-            "MCAU": "Most Cited Authors",
-            "MCP": "Most Cited Papers",
-            "MRP": "Most Representative Papers",
-            "Y": "Publicaciones por año",
-        }
         self.countries_global_df = None
         self.cluster_summaries: dict[str, str] = {}
 
@@ -641,7 +631,7 @@ class TyK:
         if not self.json_bcclusters or not os.path.exists(self.json_bcclusters):
             if getattr(self, "verbose_notify", False):
                 self._notify(
-                    "No se encontró <b>BCclusters.json</b>. Algunas funciones pueden no estar disponibles.",
+                    _("<b>BCclusters.json</b> not found. Some functions may not be available."),
                     "warn",
                 )
             return
@@ -993,7 +983,7 @@ class TyK:
                             except Exception:
                                 pass
 
-        self._notify(f"Resúmenes cargados: <b>{count}</b>", "success")
+        self._notify(_("Summaries loaded: <b>{count}</b>").format(count=count), "success")
         return count
 
     def _is_invalid_label(self, s: str | None) -> bool:
@@ -1254,10 +1244,10 @@ class TyK:
             "<b>"
             + df["country"]
             + "</b><br>"
-            + "Artículos: "
+            + _("Articles: ")
             + df["articles"].map("{:,}".format)
             + "<br>"
-            + "Frecuencia: "
+            + _("Frequency: ")
             + df["_freq100"].map(lambda x: f"{x:.2f}%")
         )
 
@@ -1276,7 +1266,7 @@ class TyK:
                 marker_line_color="white",
                 marker_line_width=0.6,
                 showscale=True,
-                colorbar=dict(title="Frecuencia (%)"),
+                colorbar=dict(title=_("Frequency (%)")),
             )
         )
 
@@ -1404,7 +1394,7 @@ class TyK:
         ticks = list(np.linspace(vmin, vmax, 6))
         cbar = plt.colorbar(sm, ax=ax, fraction=0.03, pad=0.02, ticks=ticks)
         cbar.ax.tick_params(labelsize=9)
-        cbar.set_label("Frecuencia (%)", fontsize=10)
+        cbar.set_label(_("Frequency (%)"), fontsize=10)
 
         ax.set_title(title, fontsize=14)
         ax.axis("off")
@@ -1427,7 +1417,7 @@ class TyK:
 
         if self.countries_global_df is None or self.countries_global_df.empty:
             self._notify(
-                "No hay datos globales de países. Ejecutá tyk.refresh_aggregates().",
+                _("No global country data available. Run tyk.refresh_aggregates()."),
                 "warn",
             )
             return
@@ -1469,10 +1459,10 @@ class TyK:
         df = df.dropna(subset=["iso3"])
 
         if df.empty:
-            self._notify("No se pudieron mapear países a códigos ISO3.", "error")
+            self._notify(_("Could not map countries to ISO3 codes."), "error")
             return
 
-        title = "Países — Distribución global de publicaciones"
+        title = _("Countries — Global distribution of publications")
 
         # =========================================================
         # EXPORTACIÓN PDF → MAPA ESTÁTICO
@@ -1496,15 +1486,15 @@ class TyK:
         import plotly.graph_objects as go
 
         hover_text = []
-        for _, r in df.iterrows():
+        for _row_idx, r in df.iterrows():
             val = r["value"]
             arts = int(r.get("articles", 0))
             val_str = f"{int(round(float(arts)))}".replace(".", ",")
 
             hover_text.append(
                 f"<b>{r['country']}</b><br>"
-                f"{('Frecuencia: ' + f'{val:.2f}%') if show_values_as_percent else 'Valor: ' + f'{val:,}'}<br>"
-                f"Artículos: {val_str}"
+                f"{(_('Frequency: ') + f'{val:.2f}%') if show_values_as_percent else _('Value: ') + f'{val:,}'}<br>"
+                f"{_('Articles: ')}{val_str}"
             )
         df["hover"] = hover_text
 
@@ -1529,9 +1519,9 @@ class TyK:
                 text=df["hover"],
                 hoverinfo="text",
                 colorscale=choropleth_colorscale,
-                colorbar_title="Frecuencia (%)"
+                colorbar_title=_("Frequency (%)")
                 if show_values_as_percent
-                else "Cantidad",
+                else _("Amount"),
                 marker_line_color="white",
                 marker_line_width=0.6,
             )
@@ -1576,7 +1566,7 @@ class TyK:
 
         if not data:
             self._notify(
-                f"No hay distribución de países (C) para el clúster {cluster_id}.",
+                _("No country distribution (C) for cluster {id}.").format(id=cluster_id),
                 "warn",
             )
             return
@@ -1595,7 +1585,7 @@ class TyK:
 
         if not rows:
             self._notify(
-                f"No se pudo construir la tabla de países para el clúster {cluster_id}.",
+                _("Could not build country table for cluster {id}.").format(id=cluster_id),
                 "warn",
             )
             return
@@ -1637,12 +1627,12 @@ class TyK:
 
         if df.empty:
             self._notify(
-                f"No se pudieron mapear países a ISO3 en el clúster {cluster_id}.",
+                _("Could not map countries to ISO3 for cluster {id}.").format(id=cluster_id),
                 "error",
             )
             return
 
-        title = f"Países — Clúster {cluster_id}"
+        title = _("Countries — Cluster {id}").format(id=cluster_id)
 
         if exporting:
             if not save_path:
@@ -1659,14 +1649,14 @@ class TyK:
         import plotly.graph_objects as go
 
         hover_text = []
-        for _, r in df.iterrows():
+        for _row_idx, r in df.iterrows():
             val = r["value"]
             arts = r.get("articles", 0) or 0
             val_str = f"{val:.2f}%" if show_values_as_percent else f"{val:,}"
             hover_text.append(
                 f"<b>{r['country']}</b><br>"
-                f"{'Frecuencia: ' + val_str}<br>"
-                f"Artículos: {int(arts)}"
+                f"{_('Frequency: ')}{val_str}<br>"
+                f"{_('Articles: ')}{int(arts)}"
             )
         df["hover"] = hover_text
 
@@ -1691,9 +1681,9 @@ class TyK:
                 text=df["hover"],
                 hoverinfo="text",
                 colorscale=choropleth_colorscale,
-                colorbar_title="Frecuencia (%)"
+                colorbar_title=_("Frequency (%)")
                 if show_values_as_percent
-                else "Cantidad",
+                else _("Amount"),
                 marker_line_color="white",
                 marker_line_width=0.6,
             )
@@ -1768,30 +1758,36 @@ class TyK:
 
         if not pairs:
             if level == "TOP":
-                self._notify("No hay clusters TOP disponibles.", "warn")
+                self._notify(_("No TOP clusters available."), "warn")
             else:
                 if top_id:
                     self._notify(
-                        f"El TOP <b>{self.label_map_top.get(top_id, top_id)}</b> no tiene subclusters.",
+                        _("TOP <b>{top}</b> has no subclusters.").format(
+                            top=self.label_map_top.get(top_id, top_id)
+                        ),
                         "warn",
                     )
                 else:
-                    self._notify("No hay subclusters para mostrar.", "warn")
+                    self._notify(_("No subclusters to display."), "warn")
             return
 
         show_top_col = level == "SUB" and not top_id
+        _th_id = "ID"
+        _th_name = _("Name")
+        _th_articles = _("Articles")
+        _th_subclusters = _("Subclusters")
         if level == "TOP":
             thead = (
-                "<th style='padding:10px;text-align:left'>ID</th>"
-                "<th style='padding:10px;text-align:left'>Nombre</th>"
-                "<th style='padding:10px;text-align:right'>Artículos</th>"
-                "<th style='padding:10px;text-align:right'>Subclusters</th>"
+                f"<th style='padding:10px;text-align:left'>{_th_id}</th>"
+                f"<th style='padding:10px;text-align:left'>{_th_name}</th>"
+                f"<th style='padding:10px;text-align:right'>{_th_articles}</th>"
+                f"<th style='padding:10px;text-align:right'>{_th_subclusters}</th>"
             )
         else:
             thead = (
-                "<th style='padding:10px;text-align:left'>ID</th>"
-                "<th style='padding:10px;text-align:left'>Nombre</th>"
-                "<th style='padding:10px;text-align:right'>Artículos</th>"
+                f"<th style='padding:10px;text-align:left'>{_th_id}</th>"
+                f"<th style='padding:10px;text-align:left'>{_th_name}</th>"
+                f"<th style='padding:10px;text-align:right'>{_th_articles}</th>"
                 + (
                     "<th style='padding:10px;text-align:left'>TOP</th>"
                     if show_top_col
@@ -1834,12 +1830,14 @@ class TyK:
         body = "".join(rows_html)
 
         title = (
-            f"Clusters <b>TOP</b> disponibles (total: {len(pairs)})"
+            _("Available <b>TOP</b> Clusters (total: {total})").format(total=len(pairs))
             if level == "TOP"
             else (
-                f"Subclusters de <b>{self.label_map_top.get(top_id, top_id)}</b> (ID {top_id}) (total: {len(pairs)})"
+                _("Subclusters of <b>{top}</b> (ID {id}) (total: {total})").format(
+                    top=self.label_map_top.get(top_id, top_id), id=top_id, total=len(pairs)
+                )
                 if top_id
-                else f"Subclusters disponibles (total: {len(pairs)})"
+                else _("Available Subclusters (total: {total})").format(total=len(pairs))
             )
         )
 
@@ -2025,17 +2023,19 @@ class TyK:
         def _env_is_vscode():
             return "VSCODE_PID" in os.environ
 
+        _lbl_size = _("Size")
+        _lbl_edge_threshold = _("Edge threshold")
         colorbar_html = ""
         if show_colorbar:
             threshold_html = (
-                f"<div style='margin-top:6px;font-size:12px;color:#333;'>Umbral arista ≥ {edge_weight_threshold:g}</div>"
+                f"<div style='margin-top:6px;font-size:12px;color:#333;'>{_lbl_edge_threshold} ≥ {edge_weight_threshold:g}</div>"
                 if edge_weight_threshold is not None
                 else ""
             )
             colorbar_html = f"""
             <div style="position:absolute; top:16px; right:16px; background:white; border:1px solid #e1e5ea;
                         border-radius:6px; padding:8px 12px; font-family:sans-serif; font-size:14px; color:#222; text-align:center;">
-              <div style="font-weight:600; margin-bottom:6px;">Tamaño</div>
+              <div style="font-weight:600; margin-bottom:6px;">{_lbl_size}</div>
               <div style="margin-bottom:4px;">{int(vmax)}</div>
               <div style="width:22px; height:160px; background:{gradient_css}; border:1px solid #ccc; margin:0 auto;"></div>
               <div style="margin-top:4px;">{int(vmin)}</div>
@@ -2046,7 +2046,7 @@ class TyK:
             colorbar_html = f"""
             <div style="position:absolute; top:16px; right:16px; background:white; border:1px solid #e1e5ea;
                         border-radius:6px; padding:8px 12px; font-family:sans-serif; font-size:14px; color:#222; text-align:center;">
-              <div style="font-weight:600;">Umbral arista</div>
+              <div style="font-weight:600;">{_lbl_edge_threshold}</div>
               <div style="margin-top:4px;">≥ {edge_weight_threshold:g}</div>
             </div>
             """
@@ -2055,10 +2055,13 @@ class TyK:
         if show_summary_panel:
             panel_html = f"""
             <div id="{panel_id}" style="margin:6px 0 10px 0; padding:10px 12px; border:1px solid #d8e4ff;
-                border-radius:8px; background:#f6f9ff; font-family:sans-serif; color:#123; min-height:40px;">
+                border-radius:8px; background:#f6f9ff; font-family:sans-serif; font-size:12px; color:#123; min-height:40px;">
             </div>
             """
 
+        _js_cluster = _("Cluster")
+        _js_no_summary = _("No summary available.")
+        _js_view_report = _("View full report")
         nodes_json = json.dumps(nodes, ensure_ascii=False)
         edges_json = json.dumps(edges, ensure_ascii=False)
         summaries_json = json.dumps(summaries_map or {}, ensure_ascii=False)
@@ -2120,14 +2123,14 @@ class TyK:
               if (params.nodes && params.nodes.length) {{
                 var nid     = String(params.nodes[0]);
                 var node    = data.nodes.get(nid);
-                var title   = (node && node.label) ? node.label : "Cluster";
-                var txt     = SUMMARIES[nid] || "<i>Sin resumen disponible.</i>";
+                var title   = (node && node.label) ? node.label : "{_js_cluster}";
+                var txt     = SUMMARIES[nid] || "<i>{_js_no_summary}</i>";
                 var pdfUrl  = PDF_MAP[nid];
                 var pdfLink = pdfUrl
-                  ? "<br><hr style='margin:6px 0'><a href='" + pdfUrl + "' target='_blank' style='font-weight:600;color:#2563eb'>Ver reporte completo</a>"
+                  ? "<br><hr style='margin:6px 0'><a href='" + pdfUrl + "' target='_blank' style='font-weight:600;color:#2563eb'>{_js_view_report}</a>"
                   : "";
                 panel.innerHTML =
-                  "<div style='font-family:sans-serif'>" +
+                  "<div style='font-family:sans-serif; font-size:12px;'>" +
                     "<div style='font-weight:600; margin-bottom:6px;'>" + title + "</div>" +
                     "<div style='line-height:1.45;'>" + txt + pdfLink + "</div>" +
                   "</div>";
@@ -2283,7 +2286,7 @@ class TyK:
                 f"<div style='font-size:13px'>"
                 f"<b>{label_value}</b><br>"
                 f"ID: <code>{nid}</code><br>"
-                f"Artículos: <b>{articles}</b>"
+                f"{_('Articles: ')}<b>{articles}</b>"
                 f"</div>"
             )
 
@@ -2345,7 +2348,7 @@ class TyK:
                 {
                     "id": sid,
                     "label": label,
-                    "title": f"{label} · tamaño: {val}",
+                    "title": f"{label} · {_('size: ')}{val}",
                     "value": val,
                     "color": {
                         "background": col,
@@ -2470,9 +2473,11 @@ class TyK:
     def plot_clusters_graph_interactive(
         self,
         min_edge_weight: float = 0.0,
-        title: str = "Grafo de Clusters (TOP)",
+        title: str | None = None,
         mode: str = "auto",
     ) -> None:
+        if title is None:
+            title = _("Cluster Graph (TOP)")
         nodes, edges = self._build_top_clusters_vis_graph(
             min_edge_weight=min_edge_weight
         )
@@ -2582,7 +2587,7 @@ class TyK:
     def plot_clusters_graph_png(
         self,
         min_edge_weight: float = 0.0,
-        title: str = "Grafo de Clusters (TOP)",
+        title: str | None = None,
         outfile: str | None = None,
         *,
         dpi: int = 200,
@@ -2611,6 +2616,9 @@ class TyK:
         label_font_size: int = 7,
         label_wrap_chars: int | None = None,
     ) -> str:
+        if title is None:
+            title = _("Cluster Graph (TOP)")
+
         def _slug(s: str) -> str:
             s = re.sub(r"\s+", "_", s.strip())
             s = re.sub(r"[^\w\-.]+", "", s)
@@ -3102,13 +3110,13 @@ class TyK:
                 sm.set_array([])
                 cbar = fig.colorbar(sm, ax=ax, fraction=0.035, pad=0.02)
                 cbar.ax.tick_params(labelsize=8)
-                cbar.set_label("Tamaño (artículos)", fontsize=9)
+                cbar.set_label(_("Size (articles)"), fontsize=9)
         except Exception:
             pass
         ax.text(
             0.02,
             0.02,
-            f"Umbral arista: ≥ {min_edge_weight:g}",
+            _("Edge threshold: ≥ {threshold}").format(threshold=f"{min_edge_weight:g}"),
             transform=ax.transAxes,
             fontsize=9,
             bbox=dict(facecolor="white", edgecolor="#ccc", alpha=0.8, boxstyle="round"),
@@ -3132,7 +3140,7 @@ class TyK:
         tid = self._resolve_top_id(top_val)
         if not tid:
             self._notify(
-                f"TOP <b>{top_val}</b> no encontrado (usá ID o nombre exacto).", "error"
+                _("TOP <b>{top}</b> not found (use ID or exact name).").format(top=top_val), "error"
             )
             return
 
@@ -3141,13 +3149,15 @@ class TyK:
         )
         if not nodes:
             self._notify(
-                f"El TOP <b>{self.label_map_top.get(tid, tid)}</b> (ID {tid}) no tiene subclusters.",
+                _("TOP <b>{top}</b> (ID {id}) has no subclusters.").format(
+                    top=self.label_map_top.get(tid, tid), id=tid
+                ),
                 "warn",
             )
             return
 
         if title is None:
-            title = f"Subclusters de {top_label}"
+            title = _("Subclusters of {label}").format(label=top_label)
 
         self._render_vis_network(
             nodes,
@@ -3195,7 +3205,7 @@ class TyK:
         tid = self._resolve_top_id(top_val)
         if not tid:
             self._notify(
-                f"TOP <b>{top_val}</b> no encontrado (usá ID o nombre exacto).", "error"
+                _("TOP <b>{top}</b> not found (use ID or exact name).").format(top=top_val), "error"
             )
             return ""
 
@@ -3204,13 +3214,15 @@ class TyK:
         )
         if not nodes_vis:
             self._notify(
-                f"El TOP <b>{self.label_map_top.get(tid, tid)}</b> (ID {tid}) no tiene subclusters.",
+                _("TOP <b>{top}</b> (ID {id}) has no subclusters.").format(
+                    top=self.label_map_top.get(tid, tid), id=tid
+                ),
                 "warn",
             )
             return ""
 
         if title is None:
-            title = f"Subclusters de {top_label}"
+            title = _("Subclusters of {label}").format(label=top_label)
 
         if outfile:
             outpath = Path(outfile).expanduser().resolve()
@@ -3674,13 +3686,13 @@ class TyK:
                 sm.set_array([])
                 cbar = fig.colorbar(sm, ax=ax, fraction=0.03, pad=0.015)
                 cbar.ax.tick_params(labelsize=8)
-                cbar.set_label("Tamaño (artículos)", fontsize=9)
+                cbar.set_label(_("Size (articles)"), fontsize=9)
         except Exception:
             pass
         ax.text(
             0.02,
             0.02,
-            f"Umbral arista: ≥ {min_edge_weight:g}",
+            _("Edge threshold: ≥ {threshold}").format(threshold=f"{min_edge_weight:g}"),
             transform=ax.transAxes,
             fontsize=9,
             bbox=dict(facecolor="white", edgecolor="#ccc", alpha=0.8, boxstyle="round"),
@@ -3699,7 +3711,7 @@ class TyK:
         node_type: str = "K",
         min_node_size: int = 5,
         min_edge_weight: float = 0.0,
-        title: str = "Red de co-ocurrencia",
+        title: str | None = None,
         palette: str = "YlGnBu",
         max_nodes: int = 250,
         topk_per_node: int = 5,
@@ -3707,9 +3719,11 @@ class TyK:
         height_px: int = 720,
         mode: str = "auto",
     ) -> None:
+        if title is None:
+            title = _("Co-occurrence network")
         if not self.cooc_data:
             self._notify(
-                "Sin datos de co-ocurrencia cargados. No es posible graficar la red.",
+                _("No co-occurrence data loaded. Cannot plot network."),
                 "warn",
             )
             return
@@ -3719,7 +3733,7 @@ class TyK:
         ]
         if not nodes_raw:
             self._notify(
-                f"No se encontraron nodos del tipo <b>{node_type}</b>.", "warn"
+                _("No nodes of type <b>{type}</b> found.").format(type=node_type), "warn"
             )
             return
 
@@ -3773,7 +3787,7 @@ class TyK:
                 {
                     "id": nid,
                     "label": label,
-                    "title": f"{label} · tamaño: {raw_size}",
+                    "title": f"{label} · {_('size: ')}{raw_size}",
                     "value": vis_size,
                     "raw": raw_size,
                     "color": {
@@ -3823,7 +3837,8 @@ class TyK:
         lvl = (level or "TOP").upper()
         if lvl not in ("TOP", "SUB"):
             self._notify(
-                f"Nivel inválido: <b>{level}</b>. Usá <b>TOP</b> o <b>SUB</b>.", "error"
+                _("Invalid level: <b>{level}</b>. Use <b>TOP</b> or <b>SUB</b>.").format(level=level),
+                "error",
             )
             return
 
@@ -3838,24 +3853,24 @@ class TyK:
             if not cluster_top.strip():
                 # pairs = [(cid, self.label_map_top[cid]) for cid in sorted(self.label_map_top, key=int)]
                 self._render_candidates_table(
-                    "Clusters TOP disponibles", pairs, limit=listar_max
+                    _("Available TOP Clusters"), pairs, limit=listar_max
                 )
                 display(
                     HTML(
-                        "<div style='margin-top:6px;color:#666'>Indique <b>cluster_top</b> (ID o nombre) para visualizar.</div>"
+                        f"<div style='margin-top:6px;color:#666'>{_('Specify <b>cluster_top</b> (ID or name) to visualize.')}</div>"
                     )
                 )
                 return
             # pairs = [(cid, self.label_map_top[cid]) for cid in sorted(self.label_map_top, key=int)]
             self._render_candidates_table(
-                "Clusters TOP disponibles", pairs, limit=listar_max, open=False
+                _("Available TOP Clusters"), pairs, limit=listar_max, open=False
             )
 
             tid = self._resolve_top_id(cluster_top.strip())
             if not tid:
                 display(
                     HTML(
-                        f"<div style='color:#c00'>TOP <b>{cluster_top}</b> no encontrado.</div>"
+                        f"<div style='color:#c00'>{_('TOP <b>{top}</b> not found.').format(top=cluster_top)}</div>"
                     )
                 )
                 return
@@ -3865,8 +3880,8 @@ class TyK:
             display(
                 HTML(
                     f"<div style='font-family:sans-serif;margin:6px 0 10px 0;'>"
-                    f"Nivel: <b>TOP</b> &nbsp;|&nbsp; Cluster: <b>{top_name}</b> (ID: {tid}) "
-                    f"&nbsp;|&nbsp; Tipo: <b>{self.stuff_titles.get(stuff_type, stuff_type)}</b></div>"
+                    f"{_('Level: ')}<b>TOP</b> &nbsp;|&nbsp; {_('Cluster: ')}<b>{top_name}</b> (ID: {tid}) "
+                    f"&nbsp;|&nbsp; {_('Type: ')}<b>{self.stuff_titles.get(stuff_type, stuff_type)}</b></div>"
                 )
             )
             fig = self._build_figure(
@@ -3890,16 +3905,18 @@ class TyK:
                 for cid in sorted(self.label_map_top, key=int)
             ]
             self._render_candidates_table(
-                "Clusters TOP disponibles", pairs, limit=listar_max
+                _("Available TOP Clusters"), pairs, limit=listar_max
             )
             self._notify(
-                "Indicá <b>cluster_top</b> (ID o nombre) para visualizar.", "info"
+                _("Specify <b>cluster_top</b> (ID or name) to visualize."), "info"
             )
             return
 
         tid = self._resolve_top_id(cluster_top.strip())
         if not tid:
-            self._notify(f"TOP <b>{cluster_top}</b> no encontrado.", "error")
+            self._notify(
+                _("TOP <b>{top}</b> not found.").format(top=cluster_top), "error"
+            )
             return
 
         sub_ids = self.subclusters_by_top.get(tid, [])
@@ -3907,7 +3924,7 @@ class TyK:
             (sid, self.label_map_sub.get(sid, sid)) for sid in sorted(sub_ids, key=int)
         ]
         self._render_candidates_table(
-            "Clusters TOP disponibles", pairs, limit=listar_max, open=False
+            _("Available TOP Clusters"), pairs, limit=listar_max, open=False
         )
 
         if (
@@ -3918,19 +3935,23 @@ class TyK:
                 for cid in sorted(self.label_map_top, key=int)
             ]
             self._render_candidates_table(
-                f"Subclusters de TOP {self.label_map_top.get(tid, tid)} (ID {tid})",
+                _("Subclusters of TOP {name} (ID {id})").format(
+                    name=self.label_map_top.get(tid, tid), id=tid
+                ),
                 sub_pairs,
                 limit=listar_max,
             )
             self._notify(
-                "Indicá <b>cluster_sub</b> (ID o nombre) para visualizar.", "info"
+                _("Specify <b>cluster_sub</b> (ID or name) to visualize."), "info"
             )
             return
 
         sid = self._resolve_sub_in_top(tid, cluster_sub.strip())
         if not sid:
             self._notify(
-                f"El SUB <b>{cluster_sub}</b> no existe dentro del TOP <b>{self.label_map_top.get(tid, tid)}</b> (ID {tid}).",
+                _("SUB <b>{sub}</b> does not exist in TOP <b>{top}</b> (ID {id}).").format(
+                    sub=cluster_sub, top=self.label_map_top.get(tid, tid), id=tid
+                ),
                 "error",
             )
             return
@@ -3941,9 +3962,9 @@ class TyK:
         display(
             HTML(
                 f"<div style='font-family:sans-serif;margin:6px 0 10px 0;'>"
-                f"Nivel: <b>SUB</b> &nbsp;|&nbsp; Cluster: <b>{sub_name}</b> (ID: {sid}) "
+                f"{_('Level: ')}<b>SUB</b> &nbsp;|&nbsp; {_('Cluster: ')}<b>{sub_name}</b> (ID: {sid}) "
                 f"&nbsp;|&nbsp; TOP: <b>{top_name}</b> (ID: {tid}) "
-                f"&nbsp;|&nbsp; Tipo: <b>{self.stuff_titles.get(stuff_type, stuff_type)}</b></div>"
+                f"&nbsp;|&nbsp; {_('Type: ')}<b>{self.stuff_titles.get(stuff_type, stuff_type)}</b></div>"
             )
         )
         fig = self._build_figure(
@@ -4111,17 +4132,19 @@ class TyK:
         stuff = (cluster_data.get("stuff", {}) or {}).get(stuff_type, [])
 
         titles = {
-            "Y": "Publicaciones por año",
-            "MCP": "Artículos más citados",
-            "MRP": "Artículos más representativos",
-            "MCAU": "Autores más citados",
+            "Y": _("Publications by year"),
+            "MCP": _("Most Cited Articles"),
+            "MRP": _("Most Representative Articles"),
+            "MCAU": _("Most Cited Authors"),
         }
 
         # Sin datos
         if not stuff:
             if getattr(self, "verbose_notify", False):
                 self._notify(
-                    f"{cluster_name}: sin datos para <b>{self.stuff_titles.get(stuff_type, stuff_type)}</b>.",
+                    _("{name}: no data for <b>{type}</b>.").format(
+                        name=cluster_name, type=self.stuff_titles.get(stuff_type, stuff_type)
+                    ),
                     "warn",
                 )
             # En exporting: no guardamos nada (no hay data)
@@ -4245,7 +4268,7 @@ class TyK:
                 else:
                     values.append(int(round(p)))
             weights = [_to_float(s[2]) if len(s) > 2 else None for s in stuff_sorted]
-            title = f"{cluster_name} — {titles.get('Y', 'Año')}"
+            title = f"{cluster_name} — {titles.get('Y', _('Year'))}"
 
             def _weights_to_colors(weights_list):
                 try:
@@ -4293,8 +4316,8 @@ class TyK:
                 t_min = 0.25 + 0.75 * (min_abs / max_abs) if max_abs else 0.25
                 t_max = 0.25 + 0.75 * (max_abs / max_abs) if max_abs else 1.0
                 legend = [
-                    ("Menor ponderación", mcolors.to_hex(_mix(base, t_min))),
-                    ("Mayor ponderación", mcolors.to_hex(_mix(base, t_max))),
+                    (_("Lower weight"), mcolors.to_hex(_mix(base, t_min))),
+                    (_("Higher weight"), mcolors.to_hex(_mix(base, t_max))),
                 ]
                 return legend
 
@@ -4310,8 +4333,8 @@ class TyK:
                     labels=labels,
                     values=values,
                     orientation="v",
-                    x_label="Año",
-                    y_label="N° artículos",
+                    x_label=_("Year"),
+                    y_label=_("No. articles"),
                     annotate=True,
                     bar_colors=bar_colors,
                     bar_legend=bar_legend,
@@ -4347,7 +4370,7 @@ class TyK:
                         go.Bar(
                             x=[],
                             y=[],
-                            name="Menor ponderación",
+                            name=_("Lower weight"),
                             marker_color=_mix_hex(t_min),
                             showlegend=True,
                         )
@@ -4356,7 +4379,7 @@ class TyK:
                         go.Bar(
                             x=[],
                             y=[],
-                            name="Mayor ponderación",
+                            name=_("Higher weight"),
                             marker_color=_mix_hex(t_max),
                             showlegend=True,
                         )
@@ -4374,8 +4397,8 @@ class TyK:
                 pass
             fig.update_layout(
                 title=title,
-                xaxis_title="Año",
-                yaxis_title="N° artículos",
+                xaxis_title=_("Year"),
+                yaxis_title=_("No. articles"),
                 height=max(360, 28 * len(labels)),
                 margin=dict(l=60, r=20, t=40, b=40),
             )
@@ -4395,7 +4418,7 @@ class TyK:
             labels = list(labels)
             values = list(values)
 
-            title = f"{cluster_name} ({size_val} artículos) — {self.stuff_titles.get(stuff_type, stuff_type)}"
+            title = f"{cluster_name} ({size_val} {_('articles')}) — {self.stuff_titles.get(stuff_type, stuff_type)}"
             if force_chart in ("pie", "bar"):
                 chart_type = force_chart
             elif len(labels) <= 6:
@@ -4423,7 +4446,7 @@ class TyK:
                         labels=labels,
                         values=values,
                         orientation="h",
-                        x_label="Frecuencia",
+                        x_label=_("Frequency"),
                         y_label="",
                         annotate=True,
                     )
@@ -4454,7 +4477,7 @@ class TyK:
                     title=title,
                     height=max(520, len(labels) * 28),
                     margin=dict(l=110, r=20, t=40, b=40),
-                    xaxis_title="Frecuencia",
+                    xaxis_title=_("Frequency"),
                 )
 
             return fig
@@ -4497,7 +4520,7 @@ class TyK:
                 f"{detail_txt}"
                 f"{title} (top {min(limit, len(pairs))}/{len(pairs)})</summary>"
                 "<table style='border-collapse:collapse;margin-top:6px'>"
-                "<thead><tr><th style='text-align:left;padding:4px 8px'>Nombre</th>"
+                f"<thead><tr><th style='text-align:left;padding:4px 8px'>{_('Name')}</th>"
                 "<th style='text-align:left;padding:4px 8px'>ID</th></tr></thead>"
                 f"<tbody>{rows}</tbody></table></details>"
             )
@@ -4585,6 +4608,25 @@ class TyK:
 
         return None
 
+    @property
+    def stuff_titles(self) -> dict[str, str]:
+        return {
+            "K": _("Keywords"),
+            "TK": _("Title Words"),
+            "S": _("Subject Categories"),
+            "S2": _("Subject Sub-Categories"),
+            "J": _("Journal Sources"),
+            "C": _("Countries"),
+            "I": _("Institutions"),
+            "R": _("References"),
+            "RJ": _("Reference Sources"),
+            "A": _("Authors (Freq)"),
+            "MCAU": _("Most Cited Authors"),
+            "MCP": _("Most Cited Papers"),
+            "MRP": _("Most Representative Papers"),
+            "Y": _("Publications by year"),
+        }
+
     def _notify(self, msg: str, kind: str = "info") -> None:
         """Muestra mensajes como HTML (más amigable que errores de consola)."""
         colors = {
@@ -4671,18 +4713,18 @@ class TyK:
 
         level = (level or "").strip().upper()
         if level not in ("TOP", "SUB"):
-            self._notify("El parámetro <b>level</b> debe ser 'TOP' o 'SUB'.", "error")
+            self._notify(_("The parameter <b>level</b> must be 'TOP' or 'SUB'."), "error")
             return
 
         if not cluster or not cluster.strip():
             self._notify(
-                "Indicá un <b>cluster</b> (ID o nombre) para renombrar.", "error"
+                _("Specify a <b>cluster</b> (ID or name) to rename."), "error"
             )
             return
 
         if not new_name or not new_name.strip():
             self._notify(
-                "Indicá el <b>nuevo nombre</b> (new_name) para renombrar.", "error"
+                _("Specify the <b>new name</b> (new_name) to rename."), "error"
             )
             return
 
@@ -4706,8 +4748,9 @@ class TyK:
                     n["label"] = new_name
                     break
             self._notify(
-                f"<b>Renombrado correcto</b> — Nivel: <b>{lvl_text}</b> · ID: <code>{id_str}</code> "
-                f"· <i>{old}</i> → <b>{new_name}</b>",
+                _("<b>Renamed successfully</b> — Level: <b>{level}</b> · ID: <code>{id}</code> · <i>{old}</i> → <b>{new}</b>").format(
+                    level=lvl_text, id=id_str, old=old, new=new_name
+                ),
                 "success",
             )
 
@@ -4715,7 +4758,7 @@ class TyK:
             tid = self._resolve_top_id(cluster)
             if not tid:
                 self._notify(
-                    f"TOP <b>{cluster}</b> no encontrado (usá ID o nombre exacto).",
+                    _("TOP <b>{top}</b> not found (use ID or exact name).").format(top=cluster),
                     "error",
                 )
                 return
@@ -4739,8 +4782,9 @@ class TyK:
                 if sid not in subs:
                     top_name = self.label_map_top.get(resolved_top, resolved_top)
                     self._notify(
-                        f"El SUB <code>{sid}</code> no pertenece al TOP indicado "
-                        f"(<b>{top_name}</b>, ID <code>{resolved_top}</code>).",
+                        _("SUB <code>{sid}</code> does not belong to the specified TOP (<b>{top}</b>, ID <code>{id}</code>).").format(
+                            sid=sid, top=top_name, id=resolved_top
+                        ),
                         "error",
                     )
                     return
@@ -4768,8 +4812,10 @@ class TyK:
         if not candidates:
             hint = ""
             if not resolved_top:
-                hint = " Si el nombre existe en más de un TOP, indicá también <b>top_id</b> (ID o nombre del TOP)."
-            self._notify(f"SUB <b>{cluster}</b> no encontrado.{hint}", "error")
+                hint = " " + _("If the name exists in more than one TOP, also specify <b>top_id</b> (ID or name of the TOP).")
+            self._notify(
+                _("SUB <b>{sub}</b> not found.").format(sub=cluster) + hint, "error"
+            )
             return
 
         if len(candidates) > 1:
@@ -4782,17 +4828,17 @@ class TyK:
                         owner_top = tid
                         break
                 items.append(
-                    f"<li>SUB ID <code>{sid}</code> en TOP <code>{owner_top}</code> "
+                    f"<li>SUB ID <code>{sid}</code> in TOP <code>{owner_top}</code> "
                     f"(<b>{self.label_map_top.get(owner_top, owner_top)}</b>)</li>"
                 )
             self._notify(
-                "El nombre indicado coincide con múltiples SUB en distintos TOP. "
-                "Indicá <b>top_id</b> para desambiguar:<ul>" + "".join(items) + "</ul>",
+                _("The specified name matches multiple SUBs in different TOPs. Specify <b>top_id</b> to disambiguate:")
+                + "<ul>" + "".join(items) + "</ul>",
                 "warn",
             )
             return
 
         sid = candidates[0]
         _apply_rename(
-            sid, self.label_map_sub, self.subcluster_name_to_id, self.gdf_nodes_sub
+            sid, self.label_map_sub, self.subcluster_name_to_id, self.gdf_nodes_sub, "SUB"
         )
