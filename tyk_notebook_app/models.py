@@ -13,6 +13,7 @@ class Notebook(models.Model):
     name = models.CharField(max_length=255)
     slug = models.SlugField(unique=True)
     description = models.TextField(blank=True)
+    dataset_query = models.TextField(blank=True, help_text="The search query used to generate this dataset")
     source_file = models.CharField(max_length=500, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

@@ -1284,10 +1284,11 @@ class TyK:
             countrycolor="rgba(80,80,80,0.4)",
         )
         fig.update_layout(
-            title=dict(text=title, x=0.5, xanchor="center"),
+            title=dict(text=title, x=0.5, xanchor="center", font=dict(size=13)),
+            font=dict(size=11),
             height=height,
-            margin=dict(l=0, r=0, t=60, b=0),
-            hoverlabel=dict(bgcolor="white", font_size=14),
+            margin=dict(l=0, r=0, t=50, b=0),
+            hoverlabel=dict(bgcolor="white", font_size=11),
         )
         return fig
 
@@ -1393,10 +1394,10 @@ class TyK:
         sm.set_array([])
         ticks = list(np.linspace(vmin, vmax, 6))
         cbar = plt.colorbar(sm, ax=ax, fraction=0.03, pad=0.02, ticks=ticks)
-        cbar.ax.tick_params(labelsize=9)
-        cbar.set_label(_("Frequency (%)"), fontsize=10)
+        cbar.ax.tick_params(labelsize=8)
+        cbar.set_label(_("Frequency (%)"), fontsize=8)
 
-        ax.set_title(title, fontsize=14)
+        ax.set_title(title, fontsize=11)
         ax.axis("off")
 
         plt.tight_layout()
@@ -1533,15 +1534,16 @@ class TyK:
                 x=0.5,
                 xanchor="center",
                 yanchor="top",
-                font=dict(size=20, color="#222"),
+                font=dict(size=13, color="#222"),
             ),
+            font=dict(size=11),
             geo=dict(
                 showframe=False,
                 showcoastlines=True,
                 projection_type="natural earth",
             ),
             height=height,
-            margin=dict(l=0, r=0, t=60, b=0),
+            margin=dict(l=0, r=0, t=50, b=0),
         )
 
         self._show_figure(fig)
@@ -1695,15 +1697,16 @@ class TyK:
                 x=0.5,
                 xanchor="center",
                 yanchor="top",
-                font=dict(size=20, color="#222"),
+                font=dict(size=13, color="#222"),
             ),
+            font=dict(size=11),
             geo=dict(
                 showframe=False,
                 showcoastlines=True,
                 projection_type="natural earth",
             ),
             height=height,
-            margin=dict(l=0, r=0, t=60, b=0),
+            margin=dict(l=0, r=0, t=50, b=0),
         )
 
         self._show_figure(fig)
@@ -1776,34 +1779,36 @@ class TyK:
         _th_name = _("Name")
         _th_articles = _("Articles")
         _th_subclusters = _("Subclusters")
+        _th_style_l = "padding:5px 8px; text-align:left; font-size:11px;"
+        _th_style_r = "padding:5px 8px; text-align:right; font-size:11px;"
         if level == "TOP":
             thead = (
-                f"<th style='padding:10px;text-align:left'>{_th_id}</th>"
-                f"<th style='padding:10px;text-align:left'>{_th_name}</th>"
-                f"<th style='padding:10px;text-align:right'>{_th_articles}</th>"
-                f"<th style='padding:10px;text-align:right'>{_th_subclusters}</th>"
+                f"<th style='{_th_style_l}'>{_th_id}</th>"
+                f"<th style='{_th_style_l}'>{_th_name}</th>"
+                f"<th style='{_th_style_r}'>{_th_articles}</th>"
+                f"<th style='{_th_style_r}'>{_th_subclusters}</th>"
             )
         else:
             thead = (
-                f"<th style='padding:10px;text-align:left'>{_th_id}</th>"
-                f"<th style='padding:10px;text-align:left'>{_th_name}</th>"
-                f"<th style='padding:10px;text-align:right'>{_th_articles}</th>"
+                f"<th style='{_th_style_l}'>{_th_id}</th>"
+                f"<th style='{_th_style_l}'>{_th_name}</th>"
+                f"<th style='{_th_style_r}'>{_th_articles}</th>"
                 + (
-                    "<th style='padding:10px;text-align:left'>TOP</th>"
+                    f"<th style='{_th_style_l}'>TOP</th>"
                     if show_top_col
                     else ""
                 )
             )
 
+        _td_l = "padding:4px 8px; font-size:11px;"
+        _td_r = "padding:4px 8px; font-size:11px; text-align:right;"
         rows_html = []
         for cid, name in pairs:
             c = self.cluster_dict.get(cid, {})
             size = int(c.get("size", 0))
             if level == "TOP":
                 nsubs = len(self.subclusters_by_top.get(cid, []))
-                extra_cells = (
-                    f"<td style='padding:8px 12px; text-align:right'>{nsubs}</td>"
-                )
+                extra_cells = f"<td style='{_td_r}'>{nsubs}</td>"
             else:
                 top_name = ""
                 if show_top_col:
@@ -1814,16 +1819,16 @@ class TyK:
                     )
                     top_name = self.label_map_top.get(tid, tid)
                 extra_cells = (
-                    f"<td style='padding:8px 12px'>{top_name}</td>"
+                    f"<td style='{_td_l}'>{top_name}</td>"
                     if show_top_col
                     else ""
                 )
 
             rows_html.append(
                 "<tr>"
-                f"<td style='padding:8px 12px'><code>{cid}</code></td>"
-                f"<td style='padding:8px 12px'>{name}</td>"
-                f"<td style='padding:8px 12px; text-align:right'>{size}</td>"
+                f"<td style='{_td_l}'><code>{cid}</code></td>"
+                f"<td style='{_td_l}'>{name}</td>"
+                f"<td style='{_td_r}'>{size}</td>"
                 f"{extra_cells}"
                 "</tr>"
             )
@@ -1842,11 +1847,11 @@ class TyK:
         )
 
         html = f"""
-        <details open style="margin:10px 0">
-          <summary style="cursor:pointer; font-family:sans-serif">{title}</summary>
-          <div style="margin-top:10px; max-width:1100px;">
-            <table style="width:100%; border-collapse:collapse; font-family:sans-serif; background:#ffffff; color:#222;
-                          border:1px solid #d7dbe2;">
+        <details open style="margin:8px 0">
+          <summary style="cursor:pointer; font-family:sans-serif; font-size:12px;">{title}</summary>
+          <div style="margin-top:6px; max-width:800px;">
+            <table style="width:100%; border-collapse:collapse; font-family:sans-serif; font-size:11px;
+                          background:#ffffff; color:#222; border:1px solid #d7dbe2;">
               <thead style="background:#eef2f7; color:#222; border-bottom:1px solid #d7dbe2;">
                 <tr>{thead}</tr>
               </thead>
@@ -1859,7 +1864,7 @@ class TyK:
         <style>
           details table tbody tr:nth-child(odd)  {{ background:#fafbfe; }}
           details table tbody tr:nth-child(even) {{ background:#ffffff; }}
-          details table code {{ color:#374151; background: #f3f4f6; padding:2px 6px; border-radius:4px; }}
+          details table code {{ color:#374151; background:#f3f4f6; padding:1px 4px; border-radius:3px; font-size:10px; }}
         </style>
         """
 
@@ -2008,7 +2013,7 @@ class TyK:
               "nodes": {{
                 "shape": "dot",
                 "scaling": {{ "min": {scaling_min}, "max": {scaling_max} }},
-                "font": {{ "face": "Inter, Arial, sans-serif", "size": 14, "color": "#233" }},
+                "font": {{ "face": "Inter, Arial, sans-serif", "size": 11, "color": "#233" }},
                 "borderWidth": 1
               }},
               "layout": {{ "improvedLayout": true, "randomSeed": 7 }}
@@ -2028,40 +2033,33 @@ class TyK:
         colorbar_html = ""
         if show_colorbar:
             threshold_html = (
-                f"<div style='margin-top:6px;font-size:12px;color:#333;'>{_lbl_edge_threshold} ≥ {edge_weight_threshold:g}</div>"
+                f"<div style='margin-top:6px;font-size:10px;color:#333;'>{_lbl_edge_threshold} ≥ {edge_weight_threshold:g}</div>"
                 if edge_weight_threshold is not None
                 else ""
             )
             colorbar_html = f"""
             <div style="position:absolute; top:16px; right:16px; background:white; border:1px solid #e1e5ea;
-                        border-radius:6px; padding:8px 12px; font-family:sans-serif; font-size:14px; color:#222; text-align:center;">
-              <div style="font-weight:600; margin-bottom:6px;">{_lbl_size}</div>
-              <div style="margin-bottom:4px;">{int(vmax)}</div>
-              <div style="width:22px; height:160px; background:{gradient_css}; border:1px solid #ccc; margin:0 auto;"></div>
-              <div style="margin-top:4px;">{int(vmin)}</div>
+                        border-radius:6px; padding:6px 10px; font-family:sans-serif; font-size:11px; color:#222; text-align:center;">
+              <div style="font-weight:600; margin-bottom:4px;">{_lbl_size}</div>
+              <div style="margin-bottom:3px;">{int(vmax)}</div>
+              <div style="width:16px; height:120px; background:{gradient_css}; border:1px solid #ccc; margin:0 auto;"></div>
+              <div style="margin-top:3px;">{int(vmin)}</div>
               {threshold_html}
             </div>
             """
         elif edge_weight_threshold is not None:
             colorbar_html = f"""
             <div style="position:absolute; top:16px; right:16px; background:white; border:1px solid #e1e5ea;
-                        border-radius:6px; padding:8px 12px; font-family:sans-serif; font-size:14px; color:#222; text-align:center;">
+                        border-radius:6px; padding:6px 10px; font-family:sans-serif; font-size:11px; color:#222; text-align:center;">
               <div style="font-weight:600;">{_lbl_edge_threshold}</div>
-              <div style="margin-top:4px;">≥ {edge_weight_threshold:g}</div>
-            </div>
-            """
-
-        panel_html = ""
-        if show_summary_panel:
-            panel_html = f"""
-            <div id="{panel_id}" style="margin:6px 0 10px 0; padding:10px 12px; border:1px solid #d8e4ff;
-                border-radius:8px; background:#f6f9ff; font-family:sans-serif; font-size:12px; color:#123; min-height:40px;">
+              <div style="margin-top:3px;">≥ {edge_weight_threshold:g}</div>
             </div>
             """
 
         _js_cluster = _("Cluster")
         _js_no_summary = _("No summary available.")
         _js_view_report = _("View full report")
+        _js_click_prompt = _("Click a node to read its summary")
         nodes_json = json.dumps(nodes, ensure_ascii=False)
         edges_json = json.dumps(edges, ensure_ascii=False)
         summaries_json = json.dumps(summaries_map or {}, ensure_ascii=False)
@@ -2077,15 +2075,43 @@ class TyK:
         """
 
         root_width = f"{int(width_px)}px" if width_px else "100%"
-        html = f"""
-        <div data-tyk-root="1" style="width:{root_width}; max-width:{root_width};">
-          <div style="font-family:sans-serif;margin:6px 0 10px 0;font-weight:600">{title}</div>
-          {panel_html}
+
+        if show_summary_panel:
+            sidebar_html = f"""
+            <div id="{panel_id}" style="flex:0 0 300px; height:{height_px}px; overflow-y:auto;
+                border:1px solid #d8e4ff; border-radius:8px; background:#f6f9ff;
+                font-family:sans-serif; font-size:12px; color:#123; box-sizing:border-box;">
+              <div id="{panel_id}_placeholder" style="height:100%; display:flex; align-items:center;
+                  justify-content:center; padding:24px; text-align:center; color:#8899bb; font-style:italic; line-height:1.5;">
+                {_js_click_prompt}
+              </div>
+              <div id="{panel_id}_content" style="display:none; padding:14px 16px;">
+                <div id="{panel_id}_title" style="font-weight:600; font-size:13px; color:#112; margin-bottom:10px; line-height:1.3;"></div>
+                <div id="{panel_id}_body" style="line-height:1.6; color:#234;"></div>
+              </div>
+            </div>
+            """
+            graph_area = f"""
+          <div style="display:flex; gap:14px; align-items:flex-start;">
+            <div style="flex:1 1 0; min-width:0; position:relative;">
+              <div id="{div_id}" style="width:100%; height:{height_px}px; border:1px solid #e1e5ea; border-radius:8px; background-color:white;"></div>
+              {colorbar_html}
+              {tooltip_html}
+            </div>
+            {sidebar_html}
+          </div>"""
+        else:
+            graph_area = f"""
           <div style="position:relative;">
             <div id="{div_id}" style="width:100%; height:{height_px}px; border:1px solid #e1e5ea; border-radius:8px; background-color:white;"></div>
             {colorbar_html}
             {tooltip_html}
-          </div>
+          </div>"""
+
+        html = f"""
+        <div data-tyk-root="1" style="width:{root_width}; max-width:{root_width};">
+          <div style="font-family:sans-serif;margin:6px 0 10px 0;font-weight:600">{title}</div>
+          {graph_area}
         </div>
 
         <script type="text/javascript">
@@ -2121,19 +2147,22 @@ class TyK:
             network.on("click", function(params){{
               if (!panel) return;
               if (params.nodes && params.nodes.length) {{
-                var nid     = String(params.nodes[0]);
-                var node    = data.nodes.get(nid);
-                var title   = (node && node.label) ? node.label : "{_js_cluster}";
-                var txt     = SUMMARIES[nid] || "<i>{_js_no_summary}</i>";
-                var pdfUrl  = PDF_MAP[nid];
+                var nid    = String(params.nodes[0]);
+                var node   = data.nodes.get(nid);
+                var lbl    = (node && node.label) ? node.label : "{_js_cluster}";
+                var txt    = SUMMARIES[nid] || "<i>{_js_no_summary}</i>";
+                var pdfUrl = PDF_MAP[nid];
                 var pdfLink = pdfUrl
-                  ? "<br><hr style='margin:6px 0'><a href='" + pdfUrl + "' target='_blank' style='font-weight:600;color:#2563eb'>{_js_view_report}</a>"
+                  ? "<a href='" + pdfUrl + "' target='_blank' style='font-weight:600;color:#2563eb;text-decoration:none;font-size:11px;'>" +
+                      "{_js_view_report}</a>"
                   : "";
-                panel.innerHTML =
-                  "<div style='font-family:sans-serif; font-size:12px;'>" +
-                    "<div style='font-weight:600; margin-bottom:6px;'>" + title + "</div>" +
-                    "<div style='line-height:1.45;'>" + txt + pdfLink + "</div>" +
-                  "</div>";
+                document.getElementById("{panel_id}_placeholder").style.display = "none";
+                var content = document.getElementById("{panel_id}_content");
+                content.style.display = "block";
+                document.getElementById("{panel_id}_title").innerHTML =
+                  lbl + (pdfLink ? "<div style='margin-top:4px;'>" + pdfLink + "</div>" : "");
+                document.getElementById("{panel_id}_body").innerHTML = txt;
+                panel.scrollTop = 0;
               }}
             }});
 
@@ -4391,12 +4420,14 @@ class TyK:
                             y=1.02,
                             xanchor="left",
                             x=0,
+                            font=dict(size=10),
                         )
                     )
             except Exception:
                 pass
             fig.update_layout(
-                title=title,
+                title=dict(text=title, font=dict(size=13)),
+                font=dict(size=11),
                 xaxis_title=_("Year"),
                 yaxis_title=_("No. articles"),
                 height=max(360, 28 * len(labels)),
@@ -4462,7 +4493,11 @@ class TyK:
                         hole=0.3,
                     )
                 )
-                fig.update_layout(title=title)
+                fig.update_layout(
+                    title=dict(text=title, font=dict(size=13)),
+                    font=dict(size=11),
+                    legend=dict(font=dict(size=10)),
+                )
             else:
                 fig = go.Figure(
                     go.Bar(
@@ -4474,7 +4509,8 @@ class TyK:
                     )
                 )
                 fig.update_layout(
-                    title=title,
+                    title=dict(text=title, font=dict(size=13)),
+                    font=dict(size=11),
                     height=max(520, len(labels) * 28),
                     margin=dict(l=110, r=20, t=40, b=40),
                     xaxis_title=_("Frequency"),

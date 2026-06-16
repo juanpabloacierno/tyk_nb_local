@@ -22,11 +22,22 @@ from .importer import export_notebook
 # Singles are light/pastel; pairwise intersections are mid-saturated; triple is darkest.
 # Opacity increases with overlap depth so intersections stand out clearly.
 _VENN_STYLE_OVERRIDE = """
+<style>
+  html, body { padding: 0; margin: 0; }
+  .venn-container { max-width: 100%; padding: 10px 10px 0 10px; }
+  h1 { font-size: 13px; margin: 0 0 2px 0; }
+  .subtitle { font-size: 11px; margin: 0 0 6px 0; }
+  #venn { width: 100%; height: auto !important; }
+  .stats-table { font-size: 11px; margin: 0; width: 100%; }
+  .stats-table th, .stats-table td { padding: 4px 8px; }
+  .color-dot { width: 9px; height: 9px; margin-right: 5px; }
+</style>
 <script>
 (function() {
     var TYK_SINGLE_COLORS = ["#c7e9b4", "#7fcdbb", "#1d91c0"];
     var TYK_PAIR_COLORS   = ["#a4dbc0", "#74c6c2", "#41b6c4"];
     var TYK_TRIPLE_COLOR  = "#225ea8";
+    var _layoutDone = false;
 
     function applyTykVennStyle() {
         if (typeof d3 === "undefined" || d3.select("#venn").empty()) {
@@ -34,7 +45,6 @@ _VENN_STYLE_OVERRIDE = """
             return;
         }
 
-        // --- Venn diagram paths and labels ---
         var div = d3.select("#venn");
         var singleIdx = 0, pairIdx = 0;
         var renderedColors = [];
@@ -70,17 +80,14 @@ _VENN_STYLE_OVERRIDE = """
                 .style("stroke", "#1a2e40")
                 .style("stroke-width", "2.5px")
                 .style("paint-order", "stroke")
-                .style("font-size", "14px")
+                .style("font-size", "13px")
                 .style("font-weight", "bold");
         });
 
-        // --- Stats table: color dots — use the exact colors rendered on the chart ---
         var dots = document.querySelectorAll(".color-dot");
         dots.forEach(function(dot, i) {
             dot.style.background = renderedColors[i] || TYK_TRIPLE_COLOR;
         });
-
-        // --- Stats table: header and highlight row backgrounds ---
         document.querySelectorAll(".stats-table th").forEach(function(th) {
             th.style.background = "#eef2f7";
         });
@@ -91,7 +98,42 @@ _VENN_STYLE_OVERRIDE = """
         });
     }
 
+    function applyTykVennLayout() {
+        var vennEl  = document.getElementById("venn");
+        var tableEl = document.querySelector(".stats-table");
+        var container = document.querySelector(".venn-container");
+        if (!vennEl || !tableEl || !container) { setTimeout(applyTykVennLayout, 50); return; }
+        var svg = vennEl.querySelector("svg");
+        if (!svg) { setTimeout(applyTykVennLayout, 50); return; }
+        if (_layoutDone) return;
+        _layoutDone = true;
+
+        // Make SVG responsive at a smaller height
+        var origW = parseFloat(svg.getAttribute("width")) || 800;
+        var origH = parseFloat(svg.getAttribute("height")) || 500;
+        svg.setAttribute("viewBox", "0 0 " + origW + " " + origH);
+        svg.setAttribute("width", "100%");
+        svg.setAttribute("height", "320");
+
+        // Side-by-side layout: diagram left, table right
+        var wrapper = document.createElement("div");
+        wrapper.style.cssText = "display:flex; gap:16px; align-items:flex-start;";
+
+        var vennWrap = document.createElement("div");
+        vennWrap.style.cssText = "flex:1 1 0; min-width:0;";
+        vennWrap.appendChild(vennEl);
+
+        var tableWrap = document.createElement("div");
+        tableWrap.style.cssText = "flex:0 0 240px;";
+        tableWrap.appendChild(tableEl);
+
+        wrapper.appendChild(vennWrap);
+        wrapper.appendChild(tableWrap);
+        container.appendChild(wrapper);
+    }
+
     applyTykVennStyle();
+    applyTykVennLayout();
 })();
 </script>
 """
@@ -585,6 +627,131 @@ def _build_chart_code(chart_type: str, params: dict) -> str:
         return '# Select a cluster first'
 
     return "# Unknown chart type"
+
+
+@login_required
+@require_http_methods(["GET"])
+def notebook_dataset_info(request, slug):
+    """Return dataset metadata, cluster PDF links, and freq file links for the info panel."""
+    import glob
+
+    notebook = get_object_or_404(Notebook, slug=slug, is_active=True)
+    session_key = f"user_{request.user.id}"
+    executor = session_manager.sessions.get(session_key)
+    if not executor:
+        return JsonResponse({"ready": False})
+
+    tyk_obj = executor.get_variable("tyk")
+    if not tyk_obj:
+        return JsonResponse({"ready": False})
+
+    path_base = getattr(tyk_obj, "path_base", None)
+    if not path_base or not os.path.isdir(path_base):
+        return JsonResponse({"ready": False})
+
+    tyk_data_root = os.path.normpath(getattr(settings, "TYK_DATA_PATH", path_base))
+
+    def _rel_url(abs_path):
+        rel = os.path.relpath(abs_path, tyk_data_root).replace(os.sep, "/")
+        return f"/pdf/{rel}"
+
+    # --- Article count ---
+    article_count = 0
+    articles_path = os.path.join(path_base, "articles.dat")
+    if os.path.isfile(articles_path):
+        with open(articles_path, encoding="utf-8-sig", errors="ignore") as f:
+            article_count = sum(1 for ln in f if ln.strip())
+
+    # --- Source databases ---
+    databases = []
+    db_path = os.path.join(path_base, "database.dat")
+    if os.path.isfile(db_path):
+        with open(db_path, encoding="utf-8-sig", errors="ignore") as f:
+            databases = [ln.strip() for ln in f if ln.strip()]
+
+    # --- General report (root-level PDF) ---
+    general_report = None
+    for candidate in ["report.pdf", "general_report.pdf"]:
+        fp = os.path.join(path_base, candidate)
+        if os.path.isfile(fp):
+            general_report = {"url": _rel_url(fp), "name": candidate}
+            break
+    if not general_report:
+        for fp in sorted(glob.glob(os.path.join(path_base, "*.pdf"))):
+            general_report = {"url": _rel_url(fp), "name": os.path.basename(fp)}
+            break
+
+    # --- General summary (root-level text) ---
+    general_summary = None
+    for candidate in ["executive_abstract.txt", "cluster_overview.txt", "summary.txt"]:
+        fp = os.path.join(path_base, candidate)
+        if os.path.isfile(fp):
+            with open(fp, encoding="utf-8-sig", errors="ignore") as f:
+                general_summary = f.read(1500).strip()
+            break
+
+    # --- Hierarchical PDF reports ---
+    label_map_top = getattr(tyk_obj, "label_map_top", {})
+    label_map_sub = getattr(tyk_obj, "label_map_sub", {})
+
+    def _folder_label(folder_name, prefix, label_map):
+        parts = folder_name.split("_", 2)
+        fid = parts[1] if len(parts) >= 2 else folder_name
+        raw = parts[2].replace("-", " ").title() if len(parts) >= 3 else folder_name
+        return fid, label_map.get(fid, raw)
+
+    pdf_reports = []
+    clusters_dir = os.path.join(path_base, "clusters")
+    if os.path.isdir(clusters_dir):
+        for top_entry in sorted(os.scandir(clusters_dir), key=lambda e: e.name):
+            if not top_entry.is_dir() or not top_entry.name.startswith("top_"):
+                continue
+            top_id, top_label = _folder_label(top_entry.name, "top_", label_map_top)
+            top_pdf_url = None
+            for fname in os.listdir(top_entry.path):
+                if fname.startswith("cluster_") and fname.endswith("_report.pdf"):
+                    top_pdf_url = _rel_url(os.path.join(top_entry.path, fname))
+                    break
+
+            subclusters = []
+            for sub_entry in sorted(os.scandir(top_entry.path), key=lambda e: e.name):
+                if not sub_entry.is_dir() or not sub_entry.name.startswith("subcluster_"):
+                    continue
+                sub_id, sub_label = _folder_label(sub_entry.name, "subcluster_", label_map_sub)
+                for fname in os.listdir(sub_entry.path):
+                    if fname.startswith("cluster_") and fname.endswith("_report.pdf"):
+                        subclusters.append({
+                            "id": sub_id, "name": sub_label,
+                            "url": _rel_url(os.path.join(sub_entry.path, fname)),
+                        })
+                        break
+
+            if top_pdf_url or subclusters:
+                pdf_reports.append({
+                    "id": top_id, "name": top_label,
+                    "url": top_pdf_url, "subclusters": subclusters,
+                })
+
+    # --- Freq files ---
+    freq_files = []
+    freqs_dir = os.path.join(path_base, "freqs")
+    if os.path.isdir(freqs_dir):
+        for fname in sorted(os.listdir(freqs_dir)):
+            if fname.startswith("freq_") and fname.endswith(".dat"):
+                fp = os.path.join(freqs_dir, fname)
+                display = fname[len("freq_"):-len(".dat")].replace("_", " ").title()
+                freq_files.append({"name": display, "filename": fname, "url": _rel_url(fp)})
+
+    return JsonResponse({
+        "ready": True,
+        "dataset_query": notebook.dataset_query,
+        "article_count": article_count,
+        "databases": databases,
+        "general_report": general_report,
+        "general_summary": general_summary,
+        "pdf_reports": pdf_reports,
+        "freq_files": freq_files,
+    })
 
 
 @login_required

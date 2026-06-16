@@ -515,6 +515,9 @@ msgstr "Sem resumo disponível."
 msgid "View full report"
 msgstr "Ver relatório completo"
 
+msgid "Click a node to read its summary"
+msgstr "Clique em um nó para ler seu resumo"
+
 # TyK class - clusters table
 msgid "No TOP clusters available."
 msgstr "Nenhum cluster TOP disponível."
@@ -680,3 +683,12 @@ msgstr "Não foi possível construir a tabela de países para o cluster {id}."
 #, python-brace-format
 msgid "Could not map countries to ISO3 for cluster {id}."
 msgstr "Não foi possível mapear países para ISO3 para o cluster {id}."
+
+msgid "General Report"
+msgstr "Relatório geral"
+
+msgid "Frequency Files"
+msgstr "Arquivos de frequência"
+
+msgid "Reports"
+msgstr "Relatórios"

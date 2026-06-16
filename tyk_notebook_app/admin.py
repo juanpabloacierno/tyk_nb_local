@@ -322,6 +322,9 @@ class NotebookAdmin(admin.ModelAdmin):
         (None, {
             'fields': ('name', 'slug', 'description', 'is_active')
         }),
+        ('Dataset', {
+            'fields': ('dataset_query',),
+        }),
         ('Source', {
             'fields': ('source_file',),
             'classes': ('collapse',)
