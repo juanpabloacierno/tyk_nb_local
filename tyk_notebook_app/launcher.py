@@ -38,7 +38,7 @@ sys.path.insert(0, str(PROJECT_ROOT))
 sys.path.insert(0, str(BASE_DIR))
 
 # Django settings module
-SETTINGS_MODULE = "tyk_notebook_app.settings"
+SETTINGS_MODULE = "config.settings"
 
 
 def configure_django():
@@ -313,11 +313,6 @@ def main():
     # Set data path environment variable
     if args.data_path:
         os.environ["TYK_DATA_PATH"] = args.data_path
-
-    # Create necessary files
-    print("Setting up application...")
-    create_settings_module()
-    create_main_urls()
 
     # Configure Django
     configure_django()

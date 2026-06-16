@@ -23,7 +23,7 @@ else:
 sys.path.insert(0, BASE_DIR)
 
 # Set up Django settings
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "tyk_notebook_app.settings")
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 
 # Configure database path to be in runtime directory (writable)
 os.environ["TYK_DB_PATH"] = os.path.join(RUNTIME_DIR, "tyk_data")
