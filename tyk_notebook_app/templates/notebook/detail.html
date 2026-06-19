@@ -32,15 +32,19 @@
 </div>
 
 <!-- Dataset Info Panel -->
-<details id="dataset-info-panel" class="mb-4 bg-white border border-gray-200 rounded-lg shadow-sm" style="display:none;">
-  <summary class="px-4 py-3 cursor-pointer select-none flex items-center justify-between text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-lg">
-    <span id="dataset-info-summary-label">{% trans "Dataset" %}</span>
-    <svg class="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+<div class="sticky top-16 z-40 mb-4 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 bg-gray-100">
+<details id="dataset-info-panel" class="border-2 border-blue-400 rounded-lg shadow-lg" style="display:none;" open>
+  <summary class="px-4 py-3 cursor-pointer select-none flex items-center justify-between font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg">
+    <span class="flex items-center gap-3">
+      <span id="dataset-info-summary-label" class="text-base tracking-wide">{% trans "Dataset Description, Parameters and Results" %}</span>
+      <span id="di-summary-count" class="hidden text-sm font-normal text-blue-200"></span>
+    </span>
+    <svg class="w-5 h-5 text-blue-200 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
   </summary>
 
-  <div class="px-4 pb-4 pt-2" id="dataset-info-body">
+  <div class="px-4 pb-4 pt-3 bg-blue-50" id="dataset-info-body">
 
-    <h3 class="text-sm font-semibold text-gray-700 mb-3">{% trans "Dataset Description and Parameters" %}</h3>
+    <h3 class="text-sm font-semibold text-blue-900 mb-3">{% trans "Dataset Description, Parameters and Results" %}</h3>
 
     <!-- Article count + search query -->
     <div class="flex flex-wrap gap-6 mb-3">
@@ -80,6 +84,7 @@
     </div>
   </div>
 </details>
+</div>
 
 <!-- Setup status banner -->
 <div id="setup-banner" class="mb-6 p-4 rounded-lg {% if setup_complete %}bg-green-100 text-green-800{% else %}bg-yellow-100 text-yellow-800{% endif %}">
@@ -522,13 +527,13 @@ async function loadDatasetInfo() {
 
         const panel = document.getElementById('dataset-info-panel');
         panel.style.display = '';
-
-        // Summary label (article count only)
-        document.getElementById('dataset-info-summary-label').textContent =
-            `${d.article_count.toLocaleString()} {% trans "articles" %}`;
+        panel.open = true;
 
         // Article count
         document.getElementById('di-article-count').textContent = d.article_count.toLocaleString();
+        const countEl = document.getElementById('di-summary-count');
+        countEl.textContent = d.article_count.toLocaleString() + ' {% trans "articles" %}';
+        countEl.classList.remove('hidden');
 
         // Search query
         if (d.dataset_query) {
@@ -555,6 +560,7 @@ async function loadDatasetInfo() {
         if (d.pdf_reports && d.pdf_reports.length) {
             document.getElementById('di-pdf-block').style.display = '';
             const ul = document.getElementById('di-pdf-list');
+            ul.innerHTML = '';
             d.pdf_reports.forEach(top => {
                 const li = document.createElement('li');
                 li.className = 'leading-snug';
@@ -581,6 +587,7 @@ async function loadDatasetInfo() {
         if (d.freq_files && d.freq_files.length) {
             document.getElementById('di-freq-block').style.display = '';
             const ul = document.getElementById('di-freq-list');
+            ul.innerHTML = '';
             d.freq_files.forEach(f => {
                 const li = document.createElement('li');
                 li.innerHTML = `<a href="${f.url}" target="_blank" class="text-blue-600 hover:underline">${f.name}</a>`;

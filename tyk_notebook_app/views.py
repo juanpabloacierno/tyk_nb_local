@@ -742,9 +742,17 @@ def notebook_dataset_info(request, slug):
                 display = fname[len("freq_"):-len(".dat")].replace("_", " ").title()
                 freq_files.append({"name": display, "filename": fname, "url": _rel_url(fp)})
 
+    # --- Dataset query (DB field first, then query.txt in path_base) ---
+    dataset_query = notebook.dataset_query
+    if not dataset_query:
+        query_txt = os.path.join(path_base, "query.txt")
+        if os.path.isfile(query_txt):
+            with open(query_txt, encoding="utf-8-sig", errors="ignore") as f:
+                dataset_query = f.read().strip()
+
     return JsonResponse({
         "ready": True,
-        "dataset_query": notebook.dataset_query,
+        "dataset_query": dataset_query,
         "article_count": article_count,
         "databases": databases,
         "general_report": general_report,

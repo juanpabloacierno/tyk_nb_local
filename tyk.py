@@ -1429,34 +1429,51 @@ class TyK:
         df["value"] = df["value"].fillna(0)
 
         # ---------- ISO3 ----------
-        def _country_to_iso3(name: str):
-            import pycountry
+        import pycountry
 
-            aliases = {
-                "United States": "USA",
-                "United States of America": "USA",
-                "UK": "GBR",
-                "England": "GBR",
-                "Russia": "RUS",
-                "Iran": "IRN",
-                "South Korea": "KOR",
-                "North Korea": "PRK",
-                "Czech Republic": "CZE",
-                "Taiwan": "TWN",
-                "Viet Nam": "VNM",
-                "Hong Kong": "HKG",
-                "Democratic Republic of the Congo": "COD",
-                "Ivory Coast": "CIV",
-            }
-            name = str(name).strip()
-            if name in aliases:
-                return aliases[name]
-            try:
-                return pycountry.countries.search_fuzzy(name)[0].alpha_3
-            except Exception:
-                return None
+        # Build a comprehensive exact-match lookup — no fuzzy search (too slow on large files)
+        _iso3_lookup: dict[str, str] = {}
+        for _c in pycountry.countries:
+            iso3 = _c.alpha_3
+            _iso3_lookup[_c.name] = iso3
+            _iso3_lookup[_c.alpha_2] = iso3
+            _iso3_lookup[_c.alpha_3] = iso3
+            if hasattr(_c, "common_name"):
+                _iso3_lookup[_c.common_name] = iso3
+            if hasattr(_c, "official_name"):
+                _iso3_lookup[_c.official_name] = iso3
 
-        df["iso3"] = df["country"].apply(_country_to_iso3)
+        # Bibliometric / WoS / Scopus name variants not covered by pycountry
+        _iso3_lookup.update({
+            "USA": "USA",
+            "UK": "GBR",
+            "England": "GBR",
+            "Scotland": "GBR",
+            "Wales": "GBR",
+            "Northern Ireland": "GBR",
+            "Russia": "RUS",
+            "Iran": "IRN",
+            "South Korea": "KOR",
+            "North Korea": "PRK",
+            "Czech Republic": "CZE",
+            "Taiwan": "TWN",
+            "Viet Nam": "VNM",
+            "Hong Kong": "HKG",
+            "Peoples R China": "CHN",
+            "Democratic Republic of the Congo": "COD",
+            "Ivory Coast": "CIV",
+            "Syria": "SYR",
+            "Bolivia": "BOL",
+            "Venezuela": "VEN",
+            "Tanzania": "TZA",
+            "Macedonia": "MKD",
+            "Moldova": "MDA",
+            "Kosovo": "XKX",
+            "Palestine": "PSE",
+            "Laos": "LAO",
+        })
+
+        df["iso3"] = df["country"].map(lambda n: _iso3_lookup.get(str(n).strip()))
         df = df.dropna(subset=["iso3"])
 
         if df.empty:
@@ -1486,18 +1503,14 @@ class TyK:
         # =========================================================
         import plotly.graph_objects as go
 
-        hover_text = []
-        for _row_idx, r in df.iterrows():
-            val = r["value"]
-            arts = int(r.get("articles", 0))
-            val_str = f"{int(round(float(arts)))}".replace(".", ",")
-
-            hover_text.append(
-                f"<b>{r['country']}</b><br>"
-                f"{(_('Frequency: ') + f'{val:.2f}%') if show_values_as_percent else _('Value: ') + f'{val:,}'}<br>"
-                f"{_('Articles: ')}{val_str}"
-            )
-        df["hover"] = hover_text
+        arts_col = df.get("articles", 0).fillna(0).astype(int)
+        freq_label = _("Frequency: ") if show_values_as_percent else _("Value: ")
+        val_fmt = df["value"].apply(lambda v: f"{v:.2f}%" if show_values_as_percent else f"{v:,}")
+        df["hover"] = (
+            "<b>" + df["country"] + "</b><br>"
+            + freq_label + val_fmt + "<br>"
+            + _("Articles: ") + arts_col.astype(str)
+        )
 
         choropleth_colorscale = colorscale
         if isinstance(colorscale, str) and colorscale.strip().lower() in {
