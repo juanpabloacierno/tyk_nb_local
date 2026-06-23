@@ -33,7 +33,7 @@
 
 <!-- Dataset Info Panel -->
 <div class="sticky top-16 z-40 mb-4 -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 bg-gray-100">
-<details id="dataset-info-panel" class="border-2 border-blue-400 rounded-lg shadow-lg" style="display:none;" open>
+<details id="dataset-info-panel" class="border-2 border-blue-400 rounded-lg shadow-lg" style="display:none;">
   <summary class="px-4 py-3 cursor-pointer select-none flex items-center justify-between font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg">
     <span class="flex items-center gap-3">
       <span id="dataset-info-summary-label" class="text-base tracking-wide">{% trans "Dataset Description, Parameters and Results" %}</span>
@@ -363,6 +363,7 @@ async function runSetup() {
             btn.className = btn.className.replace('bg-green-600 hover:bg-green-700', 'bg-gray-400');
 
             loadDatasetInfo();
+            loadClusterOptions();
 
             for (const cellId of autoRunCells) {
                 await runCell(cellId);
@@ -527,7 +528,6 @@ async function loadDatasetInfo() {
 
         const panel = document.getElementById('dataset-info-panel');
         panel.style.display = '';
-        panel.open = true;
 
         // Article count
         document.getElementById('di-article-count').textContent = d.article_count.toLocaleString();
@@ -598,6 +598,105 @@ async function loadDatasetInfo() {
         // silently ignore — panel stays hidden
     }
 }
+
+// ── Cluster cascade ──────────────────────────────────────────────────────────
+let clusterData = [];
+
+async function loadClusterOptions() {
+    try {
+        const res = await fetch(`/notebook/${notebookSlug}/cluster-options/`);
+        if (!res.ok) { console.error('cluster-options HTTP', res.status); return; }
+        const d = await res.json();
+        if (!d.ready || !d.clusters || !d.clusters.length) {
+            console.warn('cluster-options: not ready or empty', d);
+            return;
+        }
+        clusterData = d.clusters;
+        initCascadeDropdowns();
+    } catch (e) {
+        console.error('loadClusterOptions error:', e);
+    }
+}
+
+function initCascadeDropdowns() {
+    // 1. Populate top_cluster selects that have no options yet (dynamically-loaded ones)
+    document.querySelectorAll('select.param-input[data-param-name="top_cluster"]').forEach(sel => {
+        if (sel.options.length > 0) return; // already has options
+        const blank = document.createElement('option');
+        blank.value = '';
+        blank.textContent = '— {% trans "select cluster" %} —';
+        sel.appendChild(blank);
+        clusterData.forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = c.id;
+            opt.textContent = `${c.id} — ${c.label}`;
+            sel.appendChild(opt);
+        });
+    });
+
+    // 2. Wire cascade events (additive — don't remove existing onchange)
+    document.querySelectorAll('select.param-input[data-param-name="top_cluster"]').forEach(sel => {
+        const cellContainer = sel.closest('.cell-container');
+        const subSel = cellContainer
+            ? cellContainer.querySelector('select.param-input[data-param-name="sub_cluster"]')
+            : null;
+
+        sel.addEventListener('change', () => {
+            if (subSel) {
+                // target cell: cascade sub_cluster in same cell
+                updateSubClusterOptions(subSel, sel.value);
+            } else {
+                // source cell: sync top_cluster value to all target cells
+                syncTopClusterToTargets(sel.value);
+            }
+        });
+    });
+
+    // 3. Pre-populate sub_cluster in target cells using current top_cluster value
+    document.querySelectorAll('select.param-input[data-param-name="sub_cluster"]').forEach(subSel => {
+        const cellContainer = subSel.closest('.cell-container');
+        const topSel = cellContainer
+            ? cellContainer.querySelector('select.param-input[data-param-name="top_cluster"]')
+            : null;
+        if (topSel && topSel.value) {
+            updateSubClusterOptions(subSel, topSel.value);
+        }
+    });
+}
+
+function updateSubClusterOptions(subSel, topId) {
+    const top = clusterData.find(c => c.id === topId);
+    subSel.innerHTML = '';
+    const blank = document.createElement('option');
+    blank.value = '';
+    blank.textContent = top ? '— {% trans "select subcluster" %} —' : '— {% trans "select cluster first" %} —';
+    subSel.appendChild(blank);
+    if (top) {
+        top.subclusters.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s.id;
+            opt.textContent = `${s.id} — ${s.label}`;
+            subSel.appendChild(opt);
+        });
+        subSel.disabled = false;
+    } else {
+        subSel.disabled = true;
+    }
+}
+
+function syncTopClusterToTargets(topId) {
+    document.querySelectorAll('select.param-input[data-param-name="sub_cluster"]').forEach(subSel => {
+        const cellContainer = subSel.closest('.cell-container');
+        const topSel = cellContainer
+            ? cellContainer.querySelector('select.param-input[data-param-name="top_cluster"]')
+            : null;
+        if (topSel) {
+            topSel.value = topId;
+            updateSubClusterOptions(subSel, topId);
+        }
+    });
+}
+// ─────────────────────────────────────────────────────────────────────────────
 
 // Initialize markdown rendering and auto-start
 document.addEventListener('DOMContentLoaded', function() {

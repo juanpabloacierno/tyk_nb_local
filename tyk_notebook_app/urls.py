@@ -15,6 +15,7 @@ urlpatterns = [
     path('notebook/<slug:slug>/history/', views.execution_history, name='history'),
     path('notebook/<slug:slug>/export/', views.notebook_export, name='export'),
     path('notebook/<slug:slug>/dataset-info/', views.notebook_dataset_info, name='dataset_info'),
+    path('notebook/<slug:slug>/cluster-options/', views.notebook_cluster_options, name='cluster_options'),
 
     # Dashboard views
     path('dashboard/<slug:slug>/', views.dashboard_detail, name='dashboard'),

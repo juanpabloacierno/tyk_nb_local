@@ -51,7 +51,7 @@
 
 <!-- Dataset Info Panel -->
 <div class="sticky top-16 z-40 mb-3 -mx-4 px-4 bg-gray-100">
-<details id="dataset-info-panel" class="border-2 border-blue-400 rounded-lg shadow-lg" style="display:none;" open>
+<details id="dataset-info-panel" class="border-2 border-blue-400 rounded-lg shadow-lg" style="display:none;">
   <summary class="px-4 py-3 cursor-pointer select-none flex items-center justify-between font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg">
     <span class="flex items-center gap-3">
       <span id="dataset-info-summary-label" class="text-base tracking-wide">{% trans "Dataset Description, Parameters and Results" %}</span>
@@ -530,7 +530,6 @@ async function loadDatasetInfo() {
 
         const panel = document.getElementById('dataset-info-panel');
         panel.style.display = '';
-        panel.open = true;
 
         document.getElementById('di-article-count').textContent = d.article_count.toLocaleString();
         const countEl = document.getElementById('di-summary-count');

@@ -763,6 +763,51 @@ def notebook_dataset_info(request, slug):
 
 
 @login_required
+@require_http_methods(["GET"])
+def notebook_cluster_options(request, slug):
+    """Return top-cluster / subcluster hierarchy for cascading dropdowns."""
+    notebook = get_object_or_404(Notebook, slug=slug, is_active=True)
+    session_key = f"user_{request.user.id}"
+    executor = session_manager.sessions.get(session_key)
+    if not executor:
+        return JsonResponse({"ready": False})
+
+    tyk_obj = executor.get_variable("tyk")
+    if not tyk_obj:
+        return JsonResponse({"ready": False})
+
+    path_base = getattr(tyk_obj, "path_base", None)
+    if not path_base or not os.path.isdir(path_base):
+        return JsonResponse({"ready": False})
+
+    label_map_top = getattr(tyk_obj, "label_map_top", {})
+    label_map_sub = getattr(tyk_obj, "label_map_sub", {})
+
+    def _parse_folder(folder_name, prefix, label_map):
+        parts = folder_name.split("_", 2)
+        fid = parts[1] if len(parts) >= 2 else folder_name
+        raw = parts[2].replace("-", " ").title() if len(parts) >= 3 else folder_name
+        return fid, label_map.get(fid, raw)
+
+    clusters = []
+    clusters_dir = os.path.join(path_base, "clusters")
+    if os.path.isdir(clusters_dir):
+        for top_entry in sorted(os.scandir(clusters_dir), key=lambda e: e.name):
+            if not top_entry.is_dir() or not top_entry.name.startswith("top_"):
+                continue
+            top_id, top_label = _parse_folder(top_entry.name, "top_", label_map_top)
+            subclusters = []
+            for sub_entry in sorted(os.scandir(top_entry.path), key=lambda e: e.name):
+                if not sub_entry.is_dir() or not sub_entry.name.startswith("subcluster_"):
+                    continue
+                sub_id, sub_label = _parse_folder(sub_entry.name, "subcluster_", label_map_sub)
+                subclusters.append({"id": sub_id, "label": sub_label})
+            clusters.append({"id": top_id, "label": top_label, "subclusters": subclusters})
+
+    return JsonResponse({"ready": True, "clusters": clusters})
+
+
+@login_required
 def serve_data_file(request, filepath):
     """Serve a file from within the TYK_DATA_PATH directory."""
     base = os.path.normpath(settings.TYK_DATA_PATH)
