@@ -418,6 +418,7 @@ async function runSetup() {
             isSetupComplete = true;
 
             loadDatasetInfo();
+            loadClusterOptions();
 
             for (const cellId of autoRunCells) {
                 await runCell(cellId);
@@ -592,6 +593,103 @@ async function loadDatasetInfo() {
         // silently ignore
     }
 }
+
+// ── Cluster cascade ──────────────────────────────────────────────────────────
+let clusterData = [];
+
+async function loadClusterOptions() {
+    try {
+        const res = await fetch(`/notebook/${notebookSlug}/cluster-options/`);
+        if (!res.ok) { console.error('cluster-options HTTP', res.status); return; }
+        const d = await res.json();
+        if (!d.ready || !d.clusters || !d.clusters.length) {
+            console.warn('cluster-options: not ready or empty', d);
+            return;
+        }
+        clusterData = d.clusters;
+        initCascadeDropdowns();
+    } catch (e) {
+        console.error('loadClusterOptions error:', e);
+    }
+}
+
+function initCascadeDropdowns() {
+    // 1. Populate top_cluster selects that have no options yet (dynamically-loaded ones)
+    document.querySelectorAll('select.param-input[data-param-name="top_cluster"]').forEach(sel => {
+        if (sel.options.length > 0) return; // already has options
+        const blank = document.createElement('option');
+        blank.value = '';
+        blank.textContent = '— {% trans "select cluster" %} —';
+        sel.appendChild(blank);
+        clusterData.forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = c.id;
+            opt.textContent = `${c.id} — ${c.label}`;
+            sel.appendChild(opt);
+        });
+    });
+
+    // 2. Wire cascade events (additive — don't remove existing onchange)
+    document.querySelectorAll('select.param-input[data-param-name="top_cluster"]').forEach(sel => {
+        const cellContainer = sel.closest('.cell-container');
+        const subSel = cellContainer
+            ? cellContainer.querySelector('select.param-input[data-param-name="sub_cluster"]')
+            : null;
+
+        sel.addEventListener('change', () => {
+            if (subSel) {
+                updateSubClusterOptions(subSel, sel.value);
+            } else {
+                syncTopClusterToTargets(sel.value);
+            }
+        });
+    });
+
+    // 3. Pre-populate sub_cluster in target cells using current top_cluster value
+    document.querySelectorAll('select.param-input[data-param-name="sub_cluster"]').forEach(subSel => {
+        const cellContainer = subSel.closest('.cell-container');
+        const topSel = cellContainer
+            ? cellContainer.querySelector('select.param-input[data-param-name="top_cluster"]')
+            : null;
+        if (topSel && topSel.value) {
+            updateSubClusterOptions(subSel, topSel.value);
+        }
+    });
+}
+
+function updateSubClusterOptions(subSel, topId) {
+    const top = clusterData.find(c => c.id === topId);
+    subSel.innerHTML = '';
+    const blank = document.createElement('option');
+    blank.value = '';
+    blank.textContent = top ? '— {% trans "select subcluster" %} —' : '— {% trans "select cluster first" %} —';
+    subSel.appendChild(blank);
+    if (top) {
+        top.subclusters.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s.id;
+            opt.textContent = `${s.id} — ${s.label}`;
+            subSel.appendChild(opt);
+        });
+        subSel.disabled = false;
+    } else {
+        subSel.disabled = true;
+    }
+}
+
+function syncTopClusterToTargets(topId) {
+    document.querySelectorAll('select.param-input[data-param-name="sub_cluster"]').forEach(subSel => {
+        const cellContainer = subSel.closest('.cell-container');
+        const topSel = cellContainer
+            ? cellContainer.querySelector('select.param-input[data-param-name="top_cluster"]')
+            : null;
+        if (topSel) {
+            topSel.value = topId;
+            updateSubClusterOptions(subSel, topId);
+        }
+    });
+}
+// ─────────────────────────────────────────────────────────────────────────────
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
