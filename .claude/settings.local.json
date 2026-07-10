@@ -26,7 +26,7 @@
       "Bash(/opt/homebrew/bin/msgfmt tyk_notebook_app/locale/pt/LC_MESSAGES/django.po -o tyk_notebook_app/locale/pt/LC_MESSAGES/django.mo)",
       "Bash(grep *)",
       "Bash(/opt/homebrew/bin/msgfmt /Users/juanpabloacierno/code/tyk_nb_local/tyk_notebook_app/locale/es/LC_MESSAGES/django.po -o /Users/juanpabloacierno/code/tyk_nb_local/tyk_notebook_app/locale/es/LC_MESSAGES/django.mo)",
-      "Bash(/opt/homebrew/bin/msgfmt /Users/juanpabloacierno/code/tyk_nb_local/tyk_notebook_app/locale/pt/LC_MESSAGES/django.po -o /Users/juanpabloacierno/code/tyk_nb_local/tyk_notebook_app/locale/pt/LC_MESSAGES/django.mo)"
-    ]
+      "Bash(/opt/homebrew/bin/msgfmt /Users/juanpabloacierno/code/tyk_nb_local/tyk_notebook_app/locale/pt/LC_MESSAGES/django.po -o /Users/juanpabloacierno/code/tyk_nb_local/tyk_notebook_app/locale/pt/LC_MESSAGES/django.mo)",
+      "Bash(node --check /tmp/overview_inline6.js)"    ]
   }
 }

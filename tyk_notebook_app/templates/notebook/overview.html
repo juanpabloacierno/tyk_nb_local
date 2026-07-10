@@ -189,6 +189,17 @@
                     <button onclick="rnZoom(0)" class="w-6 h-6 text-gray-500 hover:bg-gray-100 rounded text-xs leading-none flex items-center justify-center" title="Reset zoom">↺</button>
                 </div>
 
+                <!-- Level legend -->
+                <div id="dv-sankey-legend" class="hidden absolute top-2 left-2 z-10 flex items-center gap-3 bg-white/90 border border-gray-200 rounded-md shadow-sm px-2 py-1 text-xs text-gray-600">
+                    <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full inline-block" style="background:#2a78d6"></span>{% trans "Dataset" %}</span>
+                    <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full inline-block" style="background:#1baf7a"></span>{% trans "Top Cluster" %}</span>
+                    <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full inline-block" style="background:#eda100"></span>{% trans "Subcluster" %}</span>
+                </div>
+
+                <!-- Hover tooltip -->
+                <div id="dv-sankey-tooltip" class="hidden absolute z-20 pointer-events-none text-white rounded-md px-2.5 py-1.5 shadow-lg text-xs leading-snug"
+                     style="background:rgba(11,11,11,0.95); transform:translate(-50%,-100%); white-space:nowrap;"></div>
+
                 <!-- Node info panel: overlays bottom of rn-body -->
                 <div id="dv-node-info" class="hidden absolute bottom-0 left-0 right-0 border-t border-gray-200 px-4 py-3 bg-gray-50" style="max-height:160px;overflow-y:auto;background:rgba(249,250,251,0.97);">
                     <div class="flex items-start justify-between mb-1">
@@ -222,14 +233,17 @@
 {% endblock %}
 
 {% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/d3-sankey@0.12.3/dist/d3-sankey.min.js"></script>
 <script>
 const notebookSlug = '{{ notebook.slug }}';
 let isSetupComplete = {{ setup_complete|yesno:"true,false" }};
 let clusterData = [];
 let dynamicNodes = [];
-let _rnZoom = 1.0;
-let _rnBaseW = null;
-let _rnBaseH = null;
+let dynamicLinks = [];
+let _dvSvg = null;
+let _dvZoomBehavior = null;
+let _rnResizeTimer = null;
 
 // ── Accordion ─────────────────────────────────────────────────────────────────
 
@@ -243,8 +257,10 @@ function fitRnBody() {
     const ref = btn ? btn.getBoundingClientRect().bottom : body.getBoundingClientRect().top;
     const h = Math.max(200, window.innerHeight - ref - 20);
     body.style.height = h + 'px';
-    const container = document.getElementById('dv-sankey');
-    if (container && container._fullLayout) Plotly.Plots.resize(container);
+    clearTimeout(_rnResizeTimer);
+    _rnResizeTimer = setTimeout(function () {
+        if (dynamicNodes.length) renderSankey(dynamicNodes, dynamicLinks);
+    }, 150);
 }
 
 function toggleAccordion(key) {
@@ -521,6 +537,7 @@ async function loadDynamicView() {
     loading.classList.remove('hidden');
     wrap.classList.add('hidden');
     document.getElementById('dv-zoom-ctrl').classList.add('hidden');
+    document.getElementById('dv-sankey-legend').classList.add('hidden');
 
     try {
         const res = await fetch(`/notebook/${notebookSlug}/dynamic-analysis/`);
@@ -532,9 +549,11 @@ async function loadDynamicView() {
 
         sankeyClusterSummaries = d.cluster_summaries || {};
         dynamicNodes = d.nodes || [];
-        _rnZoom = 1.0; _rnBaseW = null; _rnBaseH = null;
-        const sankeyEl = document.getElementById('dv-sankey');
-        if (sankeyEl) { sankeyEl._sankeyEventsInit = false; wrap.style.overflow = 'hidden'; }
+        dynamicLinks = d.links || [];
+        // Fresh dataset: drop any previous SVG so renderSankey rebuilds from scratch
+        // instead of trying to animate between two unrelated datasets.
+        document.getElementById('dv-sankey').innerHTML = '';
+        _dvSvg = null;
 
         const totalLabel = document.getElementById('dv-total-label');
         totalLabel.textContent = (d.total_articles || 0).toLocaleString() + ' {% trans "articles" %}';
@@ -543,114 +562,189 @@ async function loadDynamicView() {
         loading.classList.add('hidden');
         wrap.classList.remove('hidden');
         document.getElementById('dv-zoom-ctrl').classList.remove('hidden');
+        document.getElementById('dv-sankey-legend').classList.remove('hidden');
         document.getElementById('dv-zoom-pct').textContent = '100%';
         fitRnBody();
-        renderSankey(d.nodes || [], d.links || []);
+        renderSankey(dynamicNodes, dynamicLinks);
     } catch (e) {
         loading.textContent = '{% trans "Error loading dynamic view:" %} ' + e.message;
     }
 }
 
+// One hue per level (dataset / top cluster / subcluster) — fixed categorical
+// order, not picked ad hoc, so the mapping stays CVD-safe.
+const DV_COLORS = { root: '#2a78d6', top: '#1baf7a', sub: '#eda100' };
+
+function dvHexToRgba(hex, alpha) {
+    const n = parseInt(hex.slice(1), 16);
+    return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${alpha})`;
+}
+
 function renderSankey(nodes, links) {
     const container = document.getElementById('dv-sankey');
+    const tooltip = document.getElementById('dv-sankey-tooltip');
 
-    const colorMap = { root: '#6366f1', top: '#0ea5e9', sub: '#10b981' };
-    const nodeColors = nodes.map(n => colorMap[n.level] || '#94a3b8');
+    const width = container.clientWidth || 600;
+    const height = container.clientHeight || 360;
+    if (!width || !height || !nodes.length) return;
 
-    // Truncate display labels to avoid overlap; full label stays in hover
+    // Truncate display labels to avoid overlap; full label stays in the tooltip.
     const maxLen = { root: 28, top: 20, sub: 16 };
-    const displayLabels = nodes.map(n => {
+    const truncate = (n) => {
         const limit = maxLen[n.level] || 16;
         return n.label.length > limit ? n.label.slice(0, limit - 1) + '…' : n.label;
+    };
+
+    const sankeyLayout = d3.sankey()
+        .nodeWidth(26)
+        .nodePadding(14)
+        .extent([[1, 6], [width - 1, height - 6]]);
+
+    // Node/link thickness comes from a sqrt of the article count, not the
+    // raw count: with many nodes the smallest ones would otherwise shrink to
+    // an invisible sliver next to the largest. Sqrt keeps "bigger = thicker"
+    // while compressing that range so small nodes stay legible — the actual
+    // counts are preserved separately (rawValue/size) for tooltips.
+    const graph = sankeyLayout({
+        nodes: nodes.map((n) => ({ ...n })),
+        links: links.map((l) => ({ ...l, rawValue: l.value, value: Math.sqrt(l.value) || 0.01 })),
     });
 
-    const trace = {
-        type: 'sankey',
-        orientation: 'h',
-        arrangement: 'freeform',
-        node: {
-            pad: 22,
-            thickness: 24,
-            line: { color: '#e2e8f0', width: 0.5 },
-            label: displayLabels,
-            color: nodeColors,
-            customdata: nodes.map((n, i) => i),
-            hovertemplate: '<b>%{customdata}</b><extra></extra>',
-        },
-        link: {
-            source: links.map(l => l.source),
-            target: links.map(l => l.target),
-            value: links.map(l => l.value),
-            color: links.map(l => {
-                const src = nodes[l.source];
-                if (!src) return 'rgba(148,163,184,0.3)';
-                if (src.level === 'root') return 'rgba(99,102,241,0.2)';
-                if (src.level === 'top') return 'rgba(14,165,233,0.2)';
-                return 'rgba(16,185,129,0.2)';
-            }),
-            hovertemplate: '%{source.label} → %{target.label}<br>%{value:,} articles<extra></extra>',
-        },
-    };
-
-    // Build full-label hover text via customdata on nodes
-    trace.node.customdata = nodes.map(n =>
-        `${n.label} — ${(n.size || 0).toLocaleString()} articles`
-    );
-    trace.node.hovertemplate = '%{customdata}<extra></extra>';
-
-    const layout = {
-        autosize: true,
-        font: { family: 'Inter, system-ui, sans-serif', size: 10 },
-        margin: { l: 8, r: 8, t: 8, b: 8 },
-        paper_bgcolor: 'transparent',
-        plot_bgcolor: 'transparent',
-    };
-
-    const config = { responsive: true, displayModeBar: false };
-
-    Plotly.react(container, [trace], layout, config);
-
-    // One-time setup: resize observer + click handler
-    if (!container._sankeyEventsInit) {
-        container._sankeyEventsInit = true;
-
-        new ResizeObserver(() => {
-            if (_rnZoom === 1.0) Plotly.Plots.resize(container);
-        }).observe(document.getElementById('rn-body'));
-
-        container.on('plotly_click', function(eventData) {
-            if (!eventData || !eventData.points || !eventData.points[0]) return;
-            const pt = eventData.points[0];
-            if (pt.source !== undefined || pt.target !== undefined) return;
-            const node = dynamicNodes[pt.pointNumber];
-            if (node) showNodeInfo(node);
-        });
+    function showTooltip(event, title, subtitle) {
+        const rect = container.getBoundingClientRect();
+        tooltip.innerHTML = '';
+        const l1 = document.createElement('div');
+        const b = document.createElement('b');
+        b.textContent = title;
+        l1.appendChild(b);
+        const l2 = document.createElement('div');
+        l2.textContent = subtitle;
+        tooltip.appendChild(l1);
+        tooltip.appendChild(l2);
+        tooltip.classList.remove('hidden');
+        tooltip.style.left = (event.clientX - rect.left) + 'px';
+        tooltip.style.top = (event.clientY - rect.top - 10) + 'px';
     }
+
+    function hideTooltip() {
+        tooltip.classList.add('hidden');
+    }
+
+    // Keep the same <svg>/zoom behavior across re-renders (resizes) so nodes
+    // and links can animate between old and new layouts instead of hard-
+    // cutting, and so the user's current pan/zoom isn't reset.
+    let svg = _dvSvg;
+    let zoomLayer, linkLayer, nodeLayer;
+    if (!svg) {
+        svg = d3.create('svg')
+            .attr('width', '100%')
+            .attr('height', '100%')
+            .style('cursor', 'grab');
+
+        zoomLayer = svg.append('g');
+        linkLayer = zoomLayer.append('g').attr('fill', 'none').attr('class', 'sankey-links');
+        nodeLayer = zoomLayer.append('g').attr('class', 'sankey-nodes');
+
+        const zoom = d3.zoom()
+            .scaleExtent([0.5, 4])
+            .filter((event) => {
+                // Plain wheel scrolls the page; ctrl/pinch or the +/− buttons zoom.
+                if (event.type === 'wheel') return event.ctrlKey || event.metaKey;
+                return !event.button;
+            })
+            .on('start', () => svg.style('cursor', 'grabbing'))
+            .on('end', () => svg.style('cursor', 'grab'))
+            .on('zoom', (event) => {
+                zoomLayer.attr('transform', event.transform);
+                document.getElementById('dv-zoom-pct').textContent = Math.round(event.transform.k * 100) + '%';
+            });
+
+        svg.call(zoom);
+        container.appendChild(svg.node());
+        svg.node()._zoomLayer = zoomLayer;
+        svg.node()._linkLayer = linkLayer;
+        svg.node()._nodeLayer = nodeLayer;
+        _dvSvg = svg;
+        _dvZoomBehavior = zoom;
+    } else {
+        zoomLayer = svg.node()._zoomLayer;
+        linkLayer = svg.node()._linkLayer;
+        nodeLayer = svg.node()._nodeLayer;
+    }
+
+    svg.attr('viewBox', [0, 0, width, height]);
+
+    const T = d3.transition().duration(350).ease(d3.easeCubicInOut);
+    const linkPath = d3.sankeyLinkHorizontal();
+
+    const linkMerged = linkLayer.selectAll('path')
+        .data(graph.links, (d) => `${d.source.id}→${d.target.id}`)
+        .join(
+            (enter) => enter.append('path')
+                .attr('d', linkPath)
+                .attr('opacity', 0)
+                .on('mousemove', (event, d) => showTooltip(event,
+                    `${d.source.label} → ${d.target.label}`,
+                    `${(d.rawValue || 0).toLocaleString()} articles`))
+                .on('mouseleave', hideTooltip),
+            (update) => update,
+            (exit) => exit.transition(T).attr('opacity', 0).remove()
+        );
+
+    linkMerged.transition(T)
+        .attr('d', linkPath)
+        .attr('stroke', (d) => dvHexToRgba(DV_COLORS[d.source.level] || '#94a3b8', 0.28))
+        .attr('stroke-width', (d) => Math.max(1, d.width))
+        .attr('opacity', 1);
+
+    const nodeMerged = nodeLayer.selectAll('g')
+        .data(graph.nodes, (d) => d.id)
+        .join(
+            (enter) => {
+                const g = enter.append('g')
+                    .attr('transform', (d) => `translate(${d.x0},${d.y0})`)
+                    .style('cursor', 'pointer')
+                    .style('opacity', 0)
+                    .on('mousemove', (event, d) => showTooltip(event, d.label,
+                        `${(d.size || 0).toLocaleString()} articles`))
+                    .on('mouseleave', hideTooltip)
+                    .on('click', (event, d) => showNodeInfo(d));
+                g.append('rect').attr('rx', 2);
+                g.append('text')
+                    .attr('dy', '0.32em')
+                    .attr('font-size', 10)
+                    .attr('fill', '#374151')
+                    .style('pointer-events', 'none');
+                return g;
+            },
+            (update) => update,
+            (exit) => exit.transition(T).style('opacity', 0).remove()
+        );
+
+    nodeMerged.transition(T)
+        .style('opacity', 1)
+        .attr('transform', (d) => `translate(${d.x0},${d.y0})`);
+
+    nodeMerged.select('rect').transition(T)
+        .attr('width', (d) => d.x1 - d.x0)
+        .attr('height', (d) => Math.max(1, d.y1 - d.y0))
+        .attr('fill', (d) => DV_COLORS[d.level] || '#94a3b8');
+
+    nodeMerged.select('text')
+        .attr('x', (d) => (d.x0 < width / 2 ? d.x1 - d.x0 + 6 : -6))
+        .attr('y', (d) => (d.y1 - d.y0) / 2)
+        .attr('text-anchor', (d) => (d.x0 < width / 2 ? 'start' : 'end'))
+        .text(truncate);
 }
 
 function rnZoom(delta) {
-    const container = document.getElementById('dv-sankey');
-    if (!container || !container._fullLayout) return;
-    const wrap = document.getElementById('dv-chart-wrap');
-
+    if (!_dvSvg || !_dvZoomBehavior) return;
     if (delta === 0) {
-        _rnZoom = 1.0; _rnBaseW = null; _rnBaseH = null;
-        wrap.style.overflow = 'hidden';
-        Plotly.Plots.resize(container);
+        _dvSvg.transition().duration(200).call(_dvZoomBehavior.transform, d3.zoomIdentity);
         document.getElementById('dv-zoom-pct').textContent = '100%';
         return;
     }
-
-    if (!_rnBaseW) _rnBaseW = container._fullLayout.width;
-    if (!_rnBaseH) _rnBaseH = container._fullLayout.height;
-    _rnZoom = Math.max(0.25, Math.min(4.0, _rnZoom + delta));
-
-    wrap.style.overflow = 'auto';
-    Plotly.relayout(container, {
-        width: Math.round(_rnBaseW * _rnZoom),
-        height: Math.round(_rnBaseH * _rnZoom),
-    });
-    document.getElementById('dv-zoom-pct').textContent = Math.round(_rnZoom * 100) + '%';
+    _dvSvg.transition().duration(200).call(_dvZoomBehavior.scaleBy, delta > 0 ? 1.25 : 0.8);
 }
 
 function showNodeInfo(node) {
@@ -679,6 +773,7 @@ function showNodeInfo(node) {
 document.addEventListener('DOMContentLoaded', function () {
     fitRnBody();
     window.addEventListener('resize', fitRnBody);
+    new ResizeObserver(fitRnBody).observe(document.getElementById('rn-body'));
     runSetup();
 });
 </script>
