@@ -808,6 +808,145 @@ def notebook_cluster_options(request, slug):
 
 
 @login_required
+def overview_detail(request, slug):
+    """Display the Overview screen for a notebook."""
+    notebook = get_object_or_404(Notebook, slug=slug, is_active=True)
+    nb_session, _ = NotebookSession.objects.get_or_create(
+        notebook=notebook, user=request.user, defaults={"parameter_values": {}}
+    )
+    context = {
+        "notebook": notebook,
+        "setup_complete": nb_session.kernel_state.get("setup_complete", False),
+    }
+    return render(request, "notebook/overview.html", context)
+
+
+@login_required
+@require_http_methods(["GET"])
+def notebook_dynamic_analysis(request, slug):
+    """Return cluster hierarchy with sizes for the dynamic Sankey-style view."""
+    notebook = get_object_or_404(Notebook, slug=slug, is_active=True)
+    session_key = f"user_{request.user.id}"
+    executor = session_manager.sessions.get(session_key)
+    if not executor:
+        return JsonResponse({"ready": False})
+
+    tyk_obj = executor.get_variable("tyk")
+    if not tyk_obj:
+        return JsonResponse({"ready": False})
+
+    cluster_dict = getattr(tyk_obj, "cluster_dict", {})
+    label_map_top = getattr(tyk_obj, "label_map_top", {})
+    label_map_sub = getattr(tyk_obj, "label_map_sub", {})
+    subclusters_by_top = getattr(tyk_obj, "subclusters_by_top", {})
+
+    nodes = [{"id": "__all__", "label": "All Articles", "level": "root", "size": 0}]
+    node_index = {"__all__": 0}
+
+    top_clusters = []
+    for cid, node in cluster_dict.items():
+        lvl = int(node.get("level", 1))
+        size = int(node.get("size", 0) or 0)
+        if lvl == 0:
+            label = label_map_top.get(cid, node.get("label_real", cid))
+            top_clusters.append({"id": cid, "label": label, "size": size})
+
+    top_clusters.sort(key=lambda x: x["id"])
+    total_size = sum(tc["size"] for tc in top_clusters)
+    nodes[0]["size"] = total_size
+
+    for tc in top_clusters:
+        node_index[tc["id"]] = len(nodes)
+        nodes.append({"id": tc["id"], "label": tc["label"], "level": "top", "size": tc["size"]})
+
+    sub_clusters_all = []
+    for cid, node in cluster_dict.items():
+        lvl = int(node.get("level", 1))
+        if lvl == 1:
+            size = int(node.get("size", 0) or 0)
+            label = label_map_sub.get(cid, node.get("label_real", cid))
+            sub_clusters_all.append({"id": cid, "label": label, "size": size})
+
+    sub_clusters_all.sort(key=lambda x: x["id"])
+    for sc in sub_clusters_all:
+        node_index[sc["id"]] = len(nodes)
+        nodes.append({"id": sc["id"], "label": sc["label"], "level": "sub", "size": sc["size"]})
+
+    links = []
+    for tc in top_clusters:
+        if tc["size"] > 0:
+            links.append({"source": node_index["__all__"], "target": node_index[tc["id"]], "value": tc["size"]})
+
+    for top_id, sub_ids in subclusters_by_top.items():
+        if top_id not in node_index:
+            continue
+        for sub_id in (sub_ids or []):
+            if sub_id not in node_index:
+                continue
+            sub_node = cluster_dict.get(sub_id, {})
+            size = int(sub_node.get("size", 0) or 0)
+            if size > 0:
+                links.append({"source": node_index[top_id], "target": node_index[sub_id], "value": size})
+
+    # Collect cluster summaries for the info panel
+    cluster_summaries = getattr(tyk_obj, "cluster_summaries", {})
+
+    return JsonResponse({
+        "ready": True,
+        "nodes": nodes,
+        "links": links,
+        "total_articles": total_size,
+        "cluster_summaries": cluster_summaries,
+    })
+
+
+@login_required
+@require_http_methods(["POST"])
+def notebook_dialog_query(request, slug):
+    """Execute a structured dataset query from the dialog section."""
+    notebook = get_object_or_404(Notebook, slug=slug, is_active=True)
+
+    try:
+        data = json.loads(request.body)
+        query_type = data.get("query_type", "")
+        params = data.get("params", {})
+    except json.JSONDecodeError:
+        return JsonResponse({"error": "Invalid JSON"}, status=400)
+
+    session_key = f"user_{request.user.id}"
+    executor = session_manager.sessions.get(session_key)
+    if not executor:
+        return JsonResponse({"ready": False, "error": "Session not initialized"})
+
+    if "tyk" not in executor.namespace:
+        return JsonResponse({"ready": False, "needs_setup": True})
+
+    top = int(params.get("top", 20))
+    cluster_id = str(params.get("cluster_id", ""))
+    sub_id = str(params.get("sub_id", ""))
+
+    code_map = {
+        "top_keywords": f'tyk.describe_cluster_params("GLOBAL", "K") if hasattr(tyk, "describe_cluster_params") else print("Not available")',
+        "top_countries": f'tyk.plot_countries_map_global(height=320, method="modern")',
+        "cluster_list": 'tyk.list_clusters(top=True)',
+        "cluster_detail": f'tyk.describe_cluster_params("TOP", "K", cluster_top="{cluster_id}")' if cluster_id else '# Select a cluster',
+        "subcluster_list": f'tyk.list_subclusters("{cluster_id}")' if cluster_id else '# Select a cluster',
+        "subcluster_detail": f'tyk.describe_cluster_params("SUB", "K", cluster_top="{cluster_id}", cluster_sub="{sub_id}")' if (cluster_id and sub_id) else '# Select a cluster and subcluster',
+    }
+
+    code = code_map.get(query_type, f'# Unknown query type: {query_type}')
+    stdout, html, error, exec_time = executor.execute(code)
+
+    return JsonResponse({
+        "success": not error,
+        "output_text": stdout,
+        "output_html": html,
+        "error": error,
+        "execution_time": exec_time,
+    })
+
+
+@login_required
 def serve_data_file(request, filepath):
     """Serve a file from within the TYK_DATA_PATH directory."""
     base = os.path.normpath(settings.TYK_DATA_PATH)

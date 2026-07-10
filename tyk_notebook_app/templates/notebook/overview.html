@@ -1,0 +1,685 @@
+{% extends "notebook/base.html" %}
+{% load i18n %}
+
+{% block title %}{{ notebook.name }} - {% trans "Overview" %}{% endblock %}
+
+{% block nav_container_class %}w-full{% endblock %}
+
+{% block nav_extra %}
+<a href="{% url 'notebook:dashboard' notebook.slug %}" class="text-gray-600 hover:text-purple-600 text-sm mr-4">
+    {% trans "Dashboard" %}
+</a>
+<a href="{% url 'notebook:detail' notebook.slug %}" class="text-gray-600 hover:text-blue-600 text-sm mr-4">
+    {% trans "Notebook" %}
+</a>
+<button onclick="resetSession()" class="text-gray-600 hover:text-red-600 text-sm">
+    {% trans "Reset" %}
+</button>
+{% endblock %}
+
+{% block main_class %}hidden{% endblock %}
+
+{% block content %}
+</main>
+<main class="w-full py-4 px-4">
+
+<!-- Header -->
+<div class="mb-3 flex items-center justify-between">
+    <div>
+        <h1 class="text-2xl font-bold text-gray-900">{{ notebook.name }}</h1>
+        {% if notebook.description %}
+        <p class="text-sm text-gray-600">{{ notebook.description }}</p>
+        {% endif %}
+    </div>
+    <button onclick="runSetup()" id="setup-btn"
+            class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md transition-colors flex items-center text-sm">
+        <span id="setup-spinner" class="loading-spinner mr-2 hidden"></span>
+        <span id="setup-text">{% trans "Initialize" %}</span>
+    </button>
+</div>
+
+<!-- Setup Banner -->
+<div id="setup-banner" class="mb-3 px-4 py-2 rounded-lg text-sm {% if setup_complete %}bg-green-100 text-green-800{% else %}bg-yellow-100 text-yellow-800{% endif %}">
+    {% if setup_complete %}
+    <span class="font-medium">{% trans "Ready." %}</span> {% trans "Overview loaded." %}
+    {% else %}
+    <span class="font-medium">{% trans "Not initialized." %}</span> {% trans "Click \"Initialize\" to load data." %}
+    {% endif %}
+</div>
+
+<!-- Three-section layout -->
+<div class="flex gap-4" style="height: calc(100vh - 210px);">
+
+    <!-- LEFT COLUMN: Dialog + Details -->
+    <div class="flex flex-col gap-4" style="width: 38%; min-width: 320px;">
+
+        <!-- 1. DIALOG SECTION -->
+        <div class="bg-white rounded-lg shadow-md flex flex-col overflow-hidden" style="flex: 0 0 auto; max-height: 48%;">
+            <div class="bg-teal-600 px-4 py-2 flex-shrink-0">
+                <h2 class="font-semibold text-white text-sm">{% trans "Explore Data" %}</h2>
+            </div>
+
+            <!-- Quick action chips -->
+            <div class="px-3 pt-2 pb-1 flex flex-wrap gap-1.5 flex-shrink-0 border-b border-gray-100">
+                <button onclick="dialogQuery('cluster_list', {})"
+                        class="dialog-chip px-2.5 py-1 rounded-full text-xs font-medium bg-teal-50 text-teal-700 hover:bg-teal-100 border border-teal-200 transition-colors">
+                    {% trans "Cluster List" %}
+                </button>
+                <button onclick="dialogQuery('top_countries', {})"
+                        class="dialog-chip px-2.5 py-1 rounded-full text-xs font-medium bg-teal-50 text-teal-700 hover:bg-teal-100 border border-teal-200 transition-colors">
+                    {% trans "Countries Map" %}
+                </button>
+                <button onclick="dialogQuery('top_keywords', {})"
+                        class="dialog-chip px-2.5 py-1 rounded-full text-xs font-medium bg-teal-50 text-teal-700 hover:bg-teal-100 border border-teal-200 transition-colors">
+                    {% trans "Top Keywords" %}
+                </button>
+            </div>
+
+            <!-- Cluster selector row -->
+            <div class="px-3 pt-2 pb-2 flex gap-2 items-end flex-shrink-0 border-b border-gray-100">
+                <div class="flex-1">
+                    <label class="block text-xs font-medium text-gray-500 mb-1">{% trans "Top Cluster" %}</label>
+                    <select id="dialog-cluster-sel" class="w-full border border-gray-300 rounded px-2 py-1.5 text-xs">
+                        <option value="">— {% trans "select" %} —</option>
+                    </select>
+                </div>
+                <div class="flex-1">
+                    <label class="block text-xs font-medium text-gray-500 mb-1">{% trans "Subcluster" %}</label>
+                    <select id="dialog-sub-sel" class="w-full border border-gray-300 rounded px-2 py-1.5 text-xs" disabled>
+                        <option value="">— {% trans "select" %} —</option>
+                    </select>
+                </div>
+                <button onclick="dialogQueryCluster()"
+                        class="bg-teal-600 hover:bg-teal-700 text-white px-3 py-1.5 rounded text-xs flex-shrink-0">
+                    {% trans "Query" %}
+                </button>
+            </div>
+
+            <!-- Dialog message area -->
+            <div class="flex-1 overflow-y-auto px-3 py-2 space-y-2 min-h-0" id="dialog-messages">
+                <div class="text-xs text-gray-400 text-center pt-2">
+                    {% trans "Select a query above to explore the dataset." %}
+                </div>
+            </div>
+        </div>
+
+        <!-- 2. DETAILS SECTION -->
+        <div class="bg-white rounded-lg shadow-md flex flex-col overflow-hidden flex-1 min-h-0">
+            <div class="bg-blue-600 px-4 py-2 flex-shrink-0">
+                <h2 class="font-semibold text-white text-sm">{% trans "Dataset Details" %}</h2>
+            </div>
+
+            <div class="flex-1 overflow-y-auto px-4 py-3 space-y-4" id="details-body">
+                <!-- Placeholder before data loads -->
+                <div id="details-placeholder" class="text-xs text-gray-400 text-center pt-4">
+                    {% trans "Initialize to load dataset details." %}
+                </div>
+
+                <!-- Article count -->
+                <div id="details-articles" class="hidden">
+                    <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{% trans "Articles" %}</div>
+                    <div class="text-2xl font-bold text-gray-800" id="det-article-count"></div>
+                </div>
+
+                <!-- Search Query -->
+                <div id="details-query" class="hidden">
+                    <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{% trans "Search Query" %}</div>
+                    <p id="det-query-text" class="text-xs font-mono text-gray-700 bg-gray-50 rounded px-2 py-1.5 border border-gray-200 whitespace-pre-wrap leading-snug"></p>
+                </div>
+
+                <!-- Summary -->
+                <div id="details-summary" class="hidden">
+                    <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{% trans "Summary" %}</div>
+                    <p id="det-summary-text" class="text-xs text-gray-700 leading-snug"></p>
+                    <a id="det-report-link" href="#" target="_blank"
+                       class="hidden mt-1.5 inline-block text-xs font-medium text-blue-600 hover:underline">
+                        {% trans "View full report" %} →
+                    </a>
+                </div>
+
+                <!-- PDF Reports -->
+                <div id="details-pdfs" class="hidden">
+                    <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">{% trans "Reports" %}</div>
+                    <ul id="det-pdf-list" class="text-xs text-gray-700 space-y-1"></ul>
+                </div>
+
+                <!-- Freq Files -->
+                <div id="details-freqs" class="hidden">
+                    <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">{% trans "Frequency Files" %}</div>
+                    <ul id="det-freq-list" class="text-xs text-gray-700 columns-2 space-y-1"></ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- RIGHT COLUMN: Accordions -->
+    <div class="flex-1 flex flex-col gap-3 min-h-0 overflow-hidden">
+
+        <!-- ACCORDION: Research Nodes -->
+        <div id="rn-card" class="bg-white rounded-lg shadow-md flex flex-col flex-1 min-h-0 overflow-hidden">
+            <button onclick="toggleAccordion('rn')"
+                    class="w-full bg-indigo-600 hover:bg-indigo-700 px-4 py-2 flex items-center justify-between flex-shrink-0 rounded-t-lg transition-colors">
+                <h2 class="font-semibold text-white text-sm">{% trans "Full Network Nodes Overview" %}</h2>
+                <div class="flex items-center gap-3">
+                    <span id="dv-total-label" class="text-indigo-200 text-xs hidden"></span>
+                    <span role="button" tabindex="0" onclick="event.stopPropagation(); loadDynamicView()"
+                          class="text-indigo-200 hover:text-white text-xs cursor-pointer">{% trans "Refresh" %}</span>
+                    <svg id="rn-chevron" class="w-4 h-4 text-indigo-200 transition-transform duration-200"
+                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                    </svg>
+                </div>
+            </button>
+
+            <!-- Sankey container: position:relative so absolute children are clipped inside it -->
+            <div id="rn-body" class="flex-1 min-h-0 relative overflow-hidden">
+                <div id="dv-loading" class="absolute inset-0 flex items-center justify-center text-gray-400 text-sm">
+                    {% trans "Initialize to load the dynamic view." %}
+                </div>
+
+                <div id="dv-chart-wrap" class="absolute inset-0 overflow-hidden hidden">
+                    <div id="dv-sankey" style="width:100%;height:100%;"></div>
+                </div>
+
+                <!-- Zoom controls -->
+                <div id="dv-zoom-ctrl" class="hidden absolute top-2 right-2 z-10 flex items-center gap-1 bg-white/90 border border-gray-200 rounded-md shadow-sm px-1 py-0.5">
+                    <button onclick="rnZoom(-0.25)" class="w-6 h-6 text-gray-600 hover:bg-gray-100 rounded text-base leading-none flex items-center justify-center">−</button>
+                    <span id="dv-zoom-pct" class="text-xs text-gray-500 w-9 text-center select-none">100%</span>
+                    <button onclick="rnZoom(0.25)" class="w-6 h-6 text-gray-600 hover:bg-gray-100 rounded text-base leading-none flex items-center justify-center">+</button>
+                    <button onclick="rnZoom(0)" class="w-6 h-6 text-gray-500 hover:bg-gray-100 rounded text-xs leading-none flex items-center justify-center" title="Reset zoom">↺</button>
+                </div>
+
+                <!-- Node info panel: overlays bottom of rn-body -->
+                <div id="dv-node-info" class="hidden absolute bottom-0 left-0 right-0 border-t border-gray-200 px-4 py-3 bg-gray-50" style="max-height:160px;overflow-y:auto;background:rgba(249,250,251,0.97);">
+                    <div class="flex items-start justify-between mb-1">
+                        <span id="dv-node-title" class="font-semibold text-sm text-gray-800"></span>
+                        <button onclick="document.getElementById('dv-node-info').classList.add('hidden')"
+                                class="text-gray-400 hover:text-gray-600 text-xs ml-2 flex-shrink-0">✕</button>
+                    </div>
+                    <div id="dv-node-stats" class="text-xs text-gray-600 space-y-0.5"></div>
+                    <p id="dv-node-summary" class="text-xs text-gray-600 mt-1 leading-snug italic"></p>
+                </div>
+            </div>
+        </div>
+
+        <!-- ACCORDION: Network Temporal Evolution -->
+        <div class="bg-white rounded-lg shadow-md flex-shrink-0">
+            <button onclick="toggleAccordion('te')"
+                    class="w-full bg-violet-600 hover:bg-violet-700 px-4 py-2 flex items-center justify-between rounded-lg transition-colors">
+                <h2 class="font-semibold text-white text-sm">{% trans "Network Temporal Evolution" %}</h2>
+                <svg id="te-chevron" class="w-4 h-4 text-violet-200 transition-transform duration-200"
+                     fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+            </button>
+            <div id="te-body" class="hidden px-4 py-3 border-t border-violet-100 text-xs text-gray-400 italic">
+                {% trans "Temporal evolution data will appear here." %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+const notebookSlug = '{{ notebook.slug }}';
+let isSetupComplete = {{ setup_complete|yesno:"true,false" }};
+let clusterData = [];
+let dynamicNodes = [];
+let _rnZoom = 1.0;
+let _rnBaseW = null;
+let _rnBaseH = null;
+
+// ── Accordion ─────────────────────────────────────────────────────────────────
+
+const _accordionOpen = { te: false, rn: true };
+
+function fitRnBody() {
+    const body = document.getElementById('rn-body');
+    if (!body) return;
+    // Measure from the header button's bottom edge to bottom of viewport
+    const btn = body.previousElementSibling;
+    const ref = btn ? btn.getBoundingClientRect().bottom : body.getBoundingClientRect().top;
+    const h = Math.max(200, window.innerHeight - ref - 20);
+    body.style.height = h + 'px';
+    const container = document.getElementById('dv-sankey');
+    if (container && container._fullLayout) Plotly.Plots.resize(container);
+}
+
+function toggleAccordion(key) {
+    _accordionOpen[key] = !_accordionOpen[key];
+    const body = document.getElementById(`${key}-body`);
+    const chevron = document.getElementById(`${key}-chevron`);
+    body.classList.toggle('hidden', !_accordionOpen[key]);
+    chevron.classList.toggle('rotate-180', _accordionOpen[key]);
+    if (key === 'rn') {
+        const card = document.getElementById('rn-card');
+        if (card) {
+            card.classList.toggle('flex-1', _accordionOpen[key]);
+            card.classList.toggle('flex-shrink-0', !_accordionOpen[key]);
+        }
+        if (_accordionOpen[key]) fitRnBody();
+    }
+}
+
+// ── Setup ────────────────────────────────────────────────────────────────────
+
+async function runSetup() {
+    const btn = document.getElementById('setup-btn');
+    const spinner = document.getElementById('setup-spinner');
+    const text = document.getElementById('setup-text');
+    const banner = document.getElementById('setup-banner');
+
+    btn.disabled = true;
+    spinner.classList.remove('hidden');
+    text.textContent = '{% trans "Initializing..." %}';
+
+    try {
+        const res = await fetch(`/notebook/${notebookSlug}/setup/`, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrftoken, 'Content-Type': 'application/json' },
+        });
+        const d = await res.json();
+
+        if (d.success) {
+            banner.className = 'mb-3 px-4 py-2 rounded-lg text-sm bg-green-100 text-green-800';
+            banner.innerHTML = '<span class="font-medium">{% trans "Ready." %}</span> {% trans "Loading overview..." %}';
+            text.textContent = '{% trans "Ready" %}';
+            isSetupComplete = true;
+            await Promise.all([loadDetails(), loadClusterDropdowns(), loadDynamicView()]);
+            banner.classList.add('hidden');
+        } else {
+            banner.className = 'mb-3 px-4 py-2 rounded-lg text-sm bg-red-100 text-red-800';
+            banner.innerHTML = '<span class="font-medium">{% trans "Failed:" %}</span> ' + (d.errors || []).join('; ');
+            text.textContent = '{% trans "Retry" %}';
+            btn.disabled = false;
+        }
+    } catch (e) {
+        banner.className = 'mb-3 px-4 py-2 rounded-lg text-sm bg-red-100 text-red-800';
+        banner.innerHTML = '<span class="font-medium">{% trans "Error:" %}</span> ' + e.message;
+        text.textContent = '{% trans "Retry" %}';
+        btn.disabled = false;
+    }
+    spinner.classList.add('hidden');
+}
+
+async function resetSession() {
+    if (!confirm('{% trans "Reset the notebook session?" %}')) return;
+    await fetch(`/notebook/${notebookSlug}/reset/`, { method: 'POST', headers: { 'X-CSRFToken': csrftoken } });
+    window.location.reload();
+}
+
+// ── Details panel ─────────────────────────────────────────────────────────────
+
+async function loadDetails() {
+    try {
+        const res = await fetch(`/notebook/${notebookSlug}/dataset-info/`);
+        const d = await res.json();
+        if (!d.ready) return;
+
+        document.getElementById('details-placeholder').classList.add('hidden');
+
+        if (d.article_count) {
+            document.getElementById('details-articles').classList.remove('hidden');
+            document.getElementById('det-article-count').textContent = d.article_count.toLocaleString();
+        }
+
+        if (d.dataset_query) {
+            document.getElementById('details-query').classList.remove('hidden');
+            document.getElementById('det-query-text').textContent = d.dataset_query;
+        }
+
+        if (d.general_summary) {
+            document.getElementById('details-summary').classList.remove('hidden');
+            document.getElementById('det-summary-text').textContent = d.general_summary;
+        }
+
+        if (d.general_report) {
+            const link = document.getElementById('det-report-link');
+            link.href = d.general_report.url;
+            link.classList.remove('hidden');
+        }
+
+        if (d.pdf_reports && d.pdf_reports.length) {
+            document.getElementById('details-pdfs').classList.remove('hidden');
+            const ul = document.getElementById('det-pdf-list');
+            ul.innerHTML = '';
+            d.pdf_reports.forEach(top => {
+                const li = document.createElement('li');
+                li.className = 'leading-snug';
+                li.innerHTML = top.url
+                    ? `<a href="${top.url}" target="_blank" class="text-blue-600 hover:underline font-medium">${top.name}</a>`
+                    : `<span class="font-medium text-gray-700">${top.name}</span>`;
+                if (top.subclusters && top.subclusters.length) {
+                    const sub_ul = document.createElement('ul');
+                    sub_ul.className = 'ml-3 mt-0.5 space-y-0.5';
+                    top.subclusters.forEach(sub => {
+                        const sub_li = document.createElement('li');
+                        sub_li.innerHTML = `<a href="${sub.url}" target="_blank" class="text-blue-500 hover:underline">${sub.name}</a>`;
+                        sub_ul.appendChild(sub_li);
+                    });
+                    li.appendChild(sub_ul);
+                }
+                ul.appendChild(li);
+            });
+        }
+
+        if (d.freq_files && d.freq_files.length) {
+            document.getElementById('details-freqs').classList.remove('hidden');
+            const ul = document.getElementById('det-freq-list');
+            ul.innerHTML = '';
+            d.freq_files.forEach(f => {
+                const li = document.createElement('li');
+                li.innerHTML = `<a href="${f.url}" target="_blank" class="text-blue-600 hover:underline">${f.name}</a>`;
+                ul.appendChild(li);
+            });
+        }
+    } catch (e) { /* silently ignore */ }
+}
+
+// ── Cluster dropdowns for dialog ─────────────────────────────────────────────
+
+async function loadClusterDropdowns() {
+    try {
+        const res = await fetch(`/notebook/${notebookSlug}/cluster-options/`);
+        const d = await res.json();
+        if (!d.ready || !d.clusters) return;
+        clusterData = d.clusters;
+
+        const topSel = document.getElementById('dialog-cluster-sel');
+        clusterData.forEach(c => {
+            const opt = document.createElement('option');
+            opt.value = c.id;
+            opt.textContent = `${c.id} — ${c.label}`;
+            topSel.appendChild(opt);
+        });
+
+        topSel.addEventListener('change', () => {
+            const subSel = document.getElementById('dialog-sub-sel');
+            subSel.innerHTML = '<option value="">— {% trans "select" %} —</option>';
+            const top = clusterData.find(c => c.id === topSel.value);
+            if (top && top.subclusters.length) {
+                top.subclusters.forEach(s => {
+                    const opt = document.createElement('option');
+                    opt.value = s.id;
+                    opt.textContent = `${s.id} — ${s.label}`;
+                    subSel.appendChild(opt);
+                });
+                subSel.disabled = false;
+            } else {
+                subSel.disabled = true;
+            }
+        });
+    } catch (e) { /* ignore */ }
+}
+
+// ── Dialog queries ────────────────────────────────────────────────────────────
+
+async function dialogQuery(queryType, params) {
+    if (!isSetupComplete) { appendMessage('system', '{% trans "Please initialize first." %}'); return; }
+
+    const labelMap = {
+        cluster_list: '{% trans "Cluster List" %}',
+        top_countries: '{% trans "Countries Map" %}',
+        top_keywords: '{% trans "Top Keywords" %}',
+        cluster_detail: '{% trans "Cluster Detail" %}',
+        subcluster_list: '{% trans "Subcluster List" %}',
+        subcluster_detail: '{% trans "Subcluster Detail" %}',
+    };
+    appendMessage('user', labelMap[queryType] || queryType);
+
+    const msgId = appendMessage('assistant', '{% trans "Loading..." %}', true);
+
+    try {
+        const res = await fetch(`/notebook/${notebookSlug}/dialog-query/`, {
+            method: 'POST',
+            headers: { 'X-CSRFToken': csrftoken, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query_type: queryType, params }),
+        });
+        const d = await res.json();
+        const el = document.getElementById(msgId);
+        if (!el) return;
+
+        if (d.needs_setup) {
+            el.textContent = '{% trans "Please initialize first." %}';
+        } else if (!d.success) {
+            el.className = el.className.replace('bg-gray-50', 'bg-red-50');
+            el.textContent = d.error || '{% trans "Error" %}';
+        } else if (d.output_html) {
+            el.innerHTML = d.output_html;
+            // Re-execute scripts inside the injected HTML
+            el.querySelectorAll('script').forEach(old => {
+                const s = document.createElement('script');
+                s.textContent = old.textContent;
+                old.replaceWith(s);
+            });
+        } else {
+            el.textContent = d.output_text || '{% trans "No output" %}';
+        }
+    } catch (e) {
+        const el = document.getElementById(msgId);
+        if (el) el.textContent = '{% trans "Error:" %} ' + e.message;
+    }
+}
+
+function dialogQueryCluster() {
+    const clusterId = document.getElementById('dialog-cluster-sel').value;
+    const subId = document.getElementById('dialog-sub-sel').value;
+    if (!clusterId) { appendMessage('system', '{% trans "Please select a cluster." %}'); return; }
+    if (subId) {
+        dialogQuery('subcluster_detail', { cluster_id: clusterId, sub_id: subId });
+    } else {
+        dialogQuery('cluster_detail', { cluster_id: clusterId });
+    }
+}
+
+let _msgCounter = 0;
+function appendMessage(role, text, isPlaceholder = false) {
+    const container = document.getElementById('dialog-messages');
+    // Clear placeholder text on first real message
+    const placeholder = container.querySelector('.text-gray-400.text-center');
+    if (placeholder) placeholder.remove();
+
+    const id = `dialog-msg-${++_msgCounter}`;
+    const div = document.createElement('div');
+    div.id = id;
+
+    if (role === 'user') {
+        div.className = 'text-right';
+        div.innerHTML = `<span class="inline-block bg-teal-600 text-white rounded-lg px-3 py-1.5 text-xs max-w-xs text-left">${text}</span>`;
+    } else if (role === 'system') {
+        div.className = 'text-center';
+        div.innerHTML = `<span class="inline-block text-gray-400 text-xs italic">${text}</span>`;
+    } else {
+        div.className = 'text-left';
+        const inner = document.createElement('div');
+        inner.id = id; // will be updated
+        inner.className = 'inline-block bg-gray-50 border border-gray-200 rounded-lg px-3 py-1.5 text-xs max-w-full overflow-auto';
+        if (isPlaceholder) inner.textContent = text;
+        else inner.innerHTML = text;
+        div.innerHTML = '';
+        div.appendChild(inner);
+        // Return the inner id so we can update it
+        container.appendChild(div);
+        container.scrollTop = container.scrollHeight;
+        return inner.id;
+    }
+    container.appendChild(div);
+    container.scrollTop = container.scrollHeight;
+    return id;
+}
+
+// ── Dynamic View (Sankey) ─────────────────────────────────────────────────────
+
+let sankeyClusterSummaries = {};
+
+async function loadDynamicView() {
+    const loading = document.getElementById('dv-loading');
+    const wrap = document.getElementById('dv-chart-wrap');
+    loading.textContent = '{% trans "Loading dynamic view..." %}';
+    loading.classList.remove('hidden');
+    wrap.classList.add('hidden');
+    document.getElementById('dv-zoom-ctrl').classList.add('hidden');
+
+    try {
+        const res = await fetch(`/notebook/${notebookSlug}/dynamic-analysis/`);
+        const d = await res.json();
+        if (!d.ready) {
+            loading.textContent = '{% trans "Data not available. Please initialize first." %}';
+            return;
+        }
+
+        sankeyClusterSummaries = d.cluster_summaries || {};
+        dynamicNodes = d.nodes || [];
+        _rnZoom = 1.0; _rnBaseW = null; _rnBaseH = null;
+        const sankeyEl = document.getElementById('dv-sankey');
+        if (sankeyEl) { sankeyEl._sankeyEventsInit = false; wrap.style.overflow = 'hidden'; }
+
+        const totalLabel = document.getElementById('dv-total-label');
+        totalLabel.textContent = (d.total_articles || 0).toLocaleString() + ' {% trans "articles" %}';
+        totalLabel.classList.remove('hidden');
+
+        loading.classList.add('hidden');
+        wrap.classList.remove('hidden');
+        document.getElementById('dv-zoom-ctrl').classList.remove('hidden');
+        document.getElementById('dv-zoom-pct').textContent = '100%';
+        fitRnBody();
+        renderSankey(d.nodes || [], d.links || []);
+    } catch (e) {
+        loading.textContent = '{% trans "Error loading dynamic view:" %} ' + e.message;
+    }
+}
+
+function renderSankey(nodes, links) {
+    const container = document.getElementById('dv-sankey');
+
+    const colorMap = { root: '#6366f1', top: '#0ea5e9', sub: '#10b981' };
+    const nodeColors = nodes.map(n => colorMap[n.level] || '#94a3b8');
+
+    // Truncate display labels to avoid overlap; full label stays in hover
+    const maxLen = { root: 28, top: 20, sub: 16 };
+    const displayLabels = nodes.map(n => {
+        const limit = maxLen[n.level] || 16;
+        return n.label.length > limit ? n.label.slice(0, limit - 1) + '…' : n.label;
+    });
+
+    const trace = {
+        type: 'sankey',
+        orientation: 'h',
+        arrangement: 'freeform',
+        node: {
+            pad: 22,
+            thickness: 24,
+            line: { color: '#e2e8f0', width: 0.5 },
+            label: displayLabels,
+            color: nodeColors,
+            customdata: nodes.map((n, i) => i),
+            hovertemplate: '<b>%{customdata}</b><extra></extra>',
+        },
+        link: {
+            source: links.map(l => l.source),
+            target: links.map(l => l.target),
+            value: links.map(l => l.value),
+            color: links.map(l => {
+                const src = nodes[l.source];
+                if (!src) return 'rgba(148,163,184,0.3)';
+                if (src.level === 'root') return 'rgba(99,102,241,0.2)';
+                if (src.level === 'top') return 'rgba(14,165,233,0.2)';
+                return 'rgba(16,185,129,0.2)';
+            }),
+            hovertemplate: '%{source.label} → %{target.label}<br>%{value:,} articles<extra></extra>',
+        },
+    };
+
+    // Build full-label hover text via customdata on nodes
+    trace.node.customdata = nodes.map(n =>
+        `${n.label} — ${(n.size || 0).toLocaleString()} articles`
+    );
+    trace.node.hovertemplate = '%{customdata}<extra></extra>';
+
+    const layout = {
+        autosize: true,
+        font: { family: 'Inter, system-ui, sans-serif', size: 10 },
+        margin: { l: 8, r: 8, t: 8, b: 8 },
+        paper_bgcolor: 'transparent',
+        plot_bgcolor: 'transparent',
+    };
+
+    const config = { responsive: true, displayModeBar: false };
+
+    Plotly.react(container, [trace], layout, config);
+
+    // One-time setup: resize observer + click handler
+    if (!container._sankeyEventsInit) {
+        container._sankeyEventsInit = true;
+
+        new ResizeObserver(() => {
+            if (_rnZoom === 1.0) Plotly.Plots.resize(container);
+        }).observe(document.getElementById('rn-body'));
+
+        container.on('plotly_click', function(eventData) {
+            if (!eventData || !eventData.points || !eventData.points[0]) return;
+            const pt = eventData.points[0];
+            if (pt.source !== undefined || pt.target !== undefined) return;
+            const node = dynamicNodes[pt.pointNumber];
+            if (node) showNodeInfo(node);
+        });
+    }
+}
+
+function rnZoom(delta) {
+    const container = document.getElementById('dv-sankey');
+    if (!container || !container._fullLayout) return;
+    const wrap = document.getElementById('dv-chart-wrap');
+
+    if (delta === 0) {
+        _rnZoom = 1.0; _rnBaseW = null; _rnBaseH = null;
+        wrap.style.overflow = 'hidden';
+        Plotly.Plots.resize(container);
+        document.getElementById('dv-zoom-pct').textContent = '100%';
+        return;
+    }
+
+    if (!_rnBaseW) _rnBaseW = container._fullLayout.width;
+    if (!_rnBaseH) _rnBaseH = container._fullLayout.height;
+    _rnZoom = Math.max(0.25, Math.min(4.0, _rnZoom + delta));
+
+    wrap.style.overflow = 'auto';
+    Plotly.relayout(container, {
+        width: Math.round(_rnBaseW * _rnZoom),
+        height: Math.round(_rnBaseH * _rnZoom),
+    });
+    document.getElementById('dv-zoom-pct').textContent = Math.round(_rnZoom * 100) + '%';
+}
+
+function showNodeInfo(node) {
+    const panel = document.getElementById('dv-node-info');
+    document.getElementById('dv-node-title').textContent = node.label;
+
+    const stats = document.getElementById('dv-node-stats');
+    const levelLabel = { root: 'Dataset', top: 'Top Cluster', sub: 'Subcluster' }[node.level] || '';
+    stats.innerHTML = `
+        <span class="font-medium text-gray-500">${levelLabel}</span>
+        <span class="mx-2 text-gray-300">·</span>
+        <span><strong>${(node.size || 0).toLocaleString()}</strong> articles</span>
+        ${node.id !== '__all__' ? `<span class="mx-2 text-gray-300">·</span><span class="text-gray-400">ID: ${node.id}</span>` : ''}
+    `;
+
+    const summaryEl = document.getElementById('dv-node-summary');
+    const summary = sankeyClusterSummaries[node.id] || '';
+    summaryEl.innerHTML = summary;
+    summaryEl.classList.toggle('hidden', !summary);
+
+    panel.classList.remove('hidden');
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+
+document.addEventListener('DOMContentLoaded', function () {
+    fitRnBody();
+    window.addEventListener('resize', fitRnBody);
+    runSetup();
+});
+</script>
+{% endblock %}

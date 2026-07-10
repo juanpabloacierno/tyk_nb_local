@@ -17,6 +17,11 @@ urlpatterns = [
     path('notebook/<slug:slug>/dataset-info/', views.notebook_dataset_info, name='dataset_info'),
     path('notebook/<slug:slug>/cluster-options/', views.notebook_cluster_options, name='cluster_options'),
 
+    # Overview view
+    path('overview/<slug:slug>/', views.overview_detail, name='overview'),
+    path('notebook/<slug:slug>/dynamic-analysis/', views.notebook_dynamic_analysis, name='dynamic_analysis'),
+    path('notebook/<slug:slug>/dialog-query/', views.notebook_dialog_query, name='dialog_query'),
+
     # Dashboard views
     path('dashboard/<slug:slug>/', views.dashboard_detail, name='dashboard'),
     path('dashboard/<slug:slug>/chart/', views.render_dashboard_chart, name='dashboard_chart'),

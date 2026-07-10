@@ -28,31 +28,40 @@
             <p class="text-gray-600 text-sm mb-4 line-clamp-2">
                 {{ notebook.description|default:_("No description available") }}
             </p>
-            <div class="flex space-x-2">
-                <a href="{% url 'notebook:dashboard' notebook.slug %}"
-                   class="flex-1 bg-purple-600 hover:bg-purple-700 text-white text-center py-2 px-3 rounded-md transition-colors text-sm"
-                   title="{% trans "Open Dashboard View" %}">
-                    {% trans "Dashboard" %}
-                </a>
-                <a href="{% url 'notebook:detail' notebook.slug %}"
-                   class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-center py-2 px-3 rounded-md transition-colors text-sm"
-                   title="{% trans "Open Classic View" %}">
-                    {% trans "Notebook" %}
-                </a>
-                <a href="{% url 'notebook:history' notebook.slug %}"
-                   class="bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-4 rounded-md transition-colors"
-                   title="{% trans "History" %}">
-                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                </a>
-                <a href="{% url 'notebook:export' notebook.slug %}"
-                   class="bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 px-4 rounded-md transition-colors"
-                   title="{% trans "Export as .py file" %}">
-                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                    </svg>
-                </a>
+            <div class="space-y-2">
+                <div class="flex space-x-2">
+                    <a href="{% url 'notebook:overview' notebook.slug %}"
+                       class="flex-1 bg-teal-600 hover:bg-teal-700 text-white text-center py-2 px-2 rounded-md transition-colors text-sm"
+                       title="{% trans "Open Overview" %}">
+                        {% trans "Overview" %}
+                    </a>
+                    <a href="{% url 'notebook:dashboard' notebook.slug %}"
+                       class="flex-1 bg-purple-600 hover:bg-purple-700 text-white text-center py-2 px-2 rounded-md transition-colors text-sm"
+                       title="{% trans "Open Dashboard View" %}">
+                        {% trans "Dashboard" %}
+                    </a>
+                    <a href="{% url 'notebook:detail' notebook.slug %}"
+                       class="flex-1 bg-blue-600 hover:bg-blue-700 text-white text-center py-2 px-2 rounded-md transition-colors text-sm"
+                       title="{% trans "Open Classic View" %}">
+                        {% trans "Notebook" %}
+                    </a>
+                </div>
+                <div class="flex justify-end space-x-2">
+                    <a href="{% url 'notebook:history' notebook.slug %}"
+                       class="bg-gray-100 hover:bg-gray-200 text-gray-700 py-1.5 px-3 rounded-md transition-colors"
+                       title="{% trans "History" %}">
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </a>
+                    <a href="{% url 'notebook:export' notebook.slug %}"
+                       class="bg-gray-100 hover:bg-gray-200 text-gray-700 py-1.5 px-3 rounded-md transition-colors"
+                       title="{% trans "Export as .py file" %}">
+                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                    </a>
+                </div>
             </div>
         </div>
     </div>
