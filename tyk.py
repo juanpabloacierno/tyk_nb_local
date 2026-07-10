@@ -1404,6 +1404,364 @@ class TyK:
         plt.savefig(save_path, dpi=200)
         plt.close()
 
+    def _iso3_to_numeric(self, iso3: str) -> int | None:
+        """ISO 3166-1 numeric code for an alpha-3, for joining with world-atlas topojson `id`s."""
+        import pycountry
+
+        if iso3 == "XKX":  # Kosovo has no official ISO 3166-1 numeric code
+            return None
+        try:
+            entry = pycountry.countries.get(alpha_3=iso3)
+            return int(entry.numeric) if entry else None
+        except Exception:
+            return None
+
+    def _d3_sequential_ramp(self, colorscale: str) -> dict:
+        """
+        Config the client-side D3 choropleth turns into a proper single-hue
+        sequential scale (magnitude → light-to-dark, never a rainbow/diverging
+        scheme). Recognized d3-scale-chromatic names pass straight through;
+        anything else — including the "tyk_brand" default — resolves to a
+        validated blue sequential ramp (monotone lightness, light→dark).
+        """
+        key = (colorscale or "").strip().lower()
+        d3_interpolators = {
+            "viridis": "interpolateViridis",
+            "turbo": "interpolateTurbo",
+            "plasma": "interpolatePlasma",
+            "cividis": "interpolateCividis",
+            "magma": "interpolateMagma",
+            "inferno": "interpolateInferno",
+            "blues": "interpolateBlues",
+            "greens": "interpolateGreens",
+            "ylgnbu": "interpolateYlGnBu",
+            "ylorrd": "interpolateYlOrRd",
+            "warm": "interpolateWarm",
+            "cool": "interpolateCool",
+        }
+        if key in d3_interpolators:
+            return {"interpolator": d3_interpolators[key]}
+        return {
+            "stops": [
+                [0.00, "#cde2fb"],
+                [0.25, "#9ec5f4"],
+                [0.50, "#5598e7"],
+                [0.75, "#2a78d6"],
+                [1.00, "#0d366b"],
+            ]
+        }
+
+    def _render_d3_choropleth_html(
+        self,
+        df,
+        *,
+        value_col: str = "value",
+        articles_col: str = "articles",
+        title: str = "",
+        height: int = 650,
+        colorscale: str = "tyk_brand",
+        show_values_as_percent: bool = True,
+    ) -> str:
+        rows = []
+        for _row_idx, r in df.iterrows():
+            numeric_id = self._iso3_to_numeric(str(r["iso3"]))
+            if numeric_id is None:
+                continue
+            try:
+                value = float(r[value_col])
+            except Exception:
+                continue
+            articles = r.get(articles_col)
+            try:
+                articles = (
+                    int(articles)
+                    if articles is not None and not pd.isna(articles)
+                    else None
+                )
+            except Exception:
+                articles = None
+            rows.append(
+                {
+                    "id": numeric_id,
+                    "country": str(r["country"]),
+                    "value": value,
+                    "articles": articles,
+                }
+            )
+
+        div_id = f"tykmap_{uuid.uuid4().hex[:8]}"
+        ramp = self._d3_sequential_ramp(colorscale)
+        value_label = _("Frequency") if show_values_as_percent else _("Value")
+        value_suffix = "%" if show_values_as_percent else ""
+        articles_label = _("Articles")
+        title_html = (
+            f'<div class="tykmap-title">{title}</div>' if title else ""
+        )
+
+        template = r"""
+<div id="__DIV_ID__" class="tykmap-root">
+  __TITLE_HTML__
+  <div class="tykmap-canvas"></div>
+  <div class="tykmap-legend"></div>
+  <div class="tykmap-tooltip" style="display:none;"></div>
+</div>
+<style>
+  #__DIV_ID__ { position: relative; width: 100%; height: __HEIGHT__px; display: flex; flex-direction: column; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, sans-serif; }
+  #__DIV_ID__ .tykmap-title { flex: 0 0 auto; font-size: 13px; font-weight: 600; color: #0b0b0b; text-align: center; padding: 4px 0 6px; }
+  #__DIV_ID__ .tykmap-canvas { flex: 1 1 auto; min-height: 0; position: relative; background: #f9f9f7; border-radius: 6px; }
+  #__DIV_ID__ .tykmap-canvas svg { display: block; width: 100%; height: 100%; }
+  #__DIV_ID__ .tykmap-country { stroke: #ffffff; stroke-width: 0.6; vector-effect: non-scaling-stroke; transition: stroke 0.1s; cursor: pointer; }
+  #__DIV_ID__ .tykmap-country.is-nodata { fill: #e3e2db; }
+  #__DIV_ID__ .tykmap-country:hover { stroke: #0b0b0b; stroke-width: 1.4; }
+  #__DIV_ID__ .tykmap-graticule { fill: none; stroke: #d8d7cf; stroke-width: 0.4; vector-effect: non-scaling-stroke; opacity: 0.6; }
+  #__DIV_ID__ .tykmap-sphere { fill: none; stroke: #c3c2b7; stroke-width: 0.8; vector-effect: non-scaling-stroke; }
+  #__DIV_ID__ .tykmap-zoom-controls { position: absolute; right: 10px; bottom: 10px; display: flex; flex-direction: column; gap: 2px; }
+  #__DIV_ID__ .tykmap-zoom-controls button { width: 24px; height: 24px; border: 1px solid #c3c2b7; background: #ffffff; color: #0b0b0b; border-radius: 4px; font-size: 13px; line-height: 1; cursor: pointer; box-shadow: 0 1px 2px rgba(0,0,0,0.12); }
+  #__DIV_ID__ .tykmap-zoom-controls button:hover { background: #f0efec; }
+  #__DIV_ID__ .tykmap-legend { flex: 0 0 auto; display: flex; align-items: center; gap: 8px; padding: 8px 14px 2px; }
+  #__DIV_ID__ .tykmap-legend svg { width: 100%; height: 28px; overflow: visible; }
+  #__DIV_ID__ .tykmap-tooltip { position: absolute; pointer-events: none; z-index: 10; background: rgba(11,11,11,0.95); color: #ffffff; font-size: 11px; line-height: 1.5; border-radius: 6px; padding: 6px 9px; box-shadow: 0 2px 8px rgba(0,0,0,0.18); transform: translate(-50%, -100%); white-space: nowrap; }
+  #__DIV_ID__ .tykmap-tooltip .tykmap-tt-value { font-weight: 700; }
+  #__DIV_ID__ .tykmap-empty { display:flex; align-items:center; justify-content:center; height:100%; color:#898781; font-size:12px; }
+</style>
+<script src="https://cdn.jsdelivr.net/npm/d3@7/dist/d3.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/topojson-client@3/dist/topojson-client.min.js"></script>
+<script>
+(function () {
+  const root = document.getElementById("__DIV_ID__");
+  if (!root) return;
+  const canvas = root.querySelector(".tykmap-canvas");
+  const legendBox = root.querySelector(".tykmap-legend");
+  const tooltip = root.querySelector(".tykmap-tooltip");
+
+  const DATA = __DATA_JSON__;
+  const RAMP = __RAMP_JSON__;
+  const VALUE_LABEL = __VALUE_LABEL_JSON__;
+  const VALUE_SUFFIX = __VALUE_SUFFIX_JSON__;
+  const ARTICLES_LABEL = __ARTICLES_LABEL_JSON__;
+
+  const byId = new Map(DATA.map(function (d) { return [d.id, d]; }));
+  const maxValue = d3.max(DATA, function (d) { return d.value; }) || 1;
+
+  function buildRamp() {
+    if (RAMP.interpolator && d3[RAMP.interpolator]) {
+      return d3[RAMP.interpolator];
+    }
+    const stops = RAMP.stops || [[0, "#cde2fb"], [1, "#0d366b"]];
+    return d3.scaleLinear()
+      .domain(stops.map(function (s) { return s[0]; }))
+      .range(stops.map(function (s) { return s[1]; }))
+      .interpolate(d3.interpolateHcl);
+  }
+  // Sqrt scale: bibliometric country shares are heavily right-skewed (a
+  // couple of countries dominate), so a linear map would render nearly
+  // every country as the same near-white swatch. Compressing the top end
+  // keeps the map visually informative across the whole distribution.
+  const color = d3.scaleSequentialSqrt(buildRamp()).domain([0, maxValue]);
+
+  function fmtValue(v) {
+    return VALUE_SUFFIX === "%"
+      ? (Math.round(v * 100) / 100).toFixed(2) + "%"
+      : d3.format(",")(Math.round(v));
+  }
+
+  function showTooltip(event, d) {
+    tooltip.innerHTML = "";
+    const line1 = document.createElement("div");
+    const name = document.createElement("b");
+    name.textContent = d.country;
+    line1.appendChild(name);
+    tooltip.appendChild(line1);
+
+    const line2 = document.createElement("div");
+    const valSpan = document.createElement("span");
+    valSpan.className = "tykmap-tt-value";
+    valSpan.textContent = fmtValue(d.value);
+    line2.appendChild(document.createTextNode(VALUE_LABEL + ": "));
+    line2.appendChild(valSpan);
+    tooltip.appendChild(line2);
+
+    if (d.articles != null) {
+      const line3 = document.createElement("div");
+      line3.textContent = ARTICLES_LABEL + ": " + d3.format(",")(d.articles);
+      tooltip.appendChild(line3);
+    }
+
+    tooltip.style.display = "block";
+    moveTooltip(event);
+  }
+
+  function moveTooltip(event) {
+    const rect = root.getBoundingClientRect();
+    tooltip.style.left = (event.clientX - rect.left) + "px";
+    tooltip.style.top = (event.clientY - rect.top - 10) + "px";
+  }
+
+  function hideTooltip() {
+    tooltip.style.display = "none";
+  }
+
+  function draw(topology) {
+    if (!document.body.contains(root)) return;
+    canvas.innerHTML = "";
+
+    const width = canvas.clientWidth || 600;
+    const height = canvas.clientHeight || 360;
+
+    const countries = topojson.feature(topology, topology.objects.countries);
+    // Flat (equirectangular) projection: a plain rectangular grid, easier to
+    // read at a glance and a natural fit for click-drag pan + scroll zoom.
+    const projection = d3.geoEquirectangular().fitSize([width - 8, height - 8], countries);
+    const path = d3.geoPath(projection);
+
+    const svg = d3.create("svg")
+      .attr("viewBox", [0, 0, width, height])
+      .attr("preserveAspectRatio", "xMidYMid meet")
+      .style("cursor", "grab");
+
+    const zoomLayer = svg.append("g");
+
+    zoomLayer.append("path")
+      .datum({ type: "Sphere" })
+      .attr("class", "tykmap-sphere")
+      .attr("d", path);
+
+    zoomLayer.append("path")
+      .datum(d3.geoGraticule10())
+      .attr("class", "tykmap-graticule")
+      .attr("d", path);
+
+    zoomLayer.append("g")
+      .selectAll("path")
+      .data(countries.features)
+      .join("path")
+      .attr("class", function (f) {
+        return byId.has(+f.id) ? "tykmap-country" : "tykmap-country is-nodata";
+      })
+      .attr("fill", function (f) {
+        const d = byId.get(+f.id);
+        return d ? color(d.value) : null;
+      })
+      .attr("d", path)
+      .on("mousemove", function (event, f) {
+        const d = byId.get(+f.id);
+        if (!d) return;
+        showTooltip(event, d);
+      })
+      .on("mouseleave", hideTooltip);
+
+    const zoom = d3.zoom()
+      .scaleExtent([1, 8])
+      .translateExtent([[0, 0], [width, height]])
+      .filter(function (event) {
+        // Plain wheel scrolls the surrounding page; ctrl/pinch or the
+        // buttons below drive zoom, drag always pans.
+        if (event.type === "wheel") return event.ctrlKey || event.metaKey;
+        return !event.button;
+      })
+      .on("start", function () { svg.style("cursor", "grabbing"); })
+      .on("end", function () { svg.style("cursor", "grab"); })
+      .on("zoom", function (event) { zoomLayer.attr("transform", event.transform); });
+
+    svg.call(zoom).on("dblclick.zoom", function (event) {
+      svg.transition().duration(200).call(zoom.scaleBy, 1.6, d3.pointer(event, svg.node()));
+    });
+
+    canvas.appendChild(svg.node());
+    drawZoomControls(svg, zoom);
+    drawLegend();
+  }
+
+  function drawZoomControls(svg, zoom) {
+    canvas.querySelectorAll(".tykmap-zoom-controls").forEach(function (n) { n.remove(); });
+
+    const controls = document.createElement("div");
+    controls.className = "tykmap-zoom-controls";
+
+    const makeBtn = function (label, title, onClick) {
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.textContent = label;
+      btn.title = title;
+      btn.addEventListener("click", onClick);
+      return btn;
+    };
+
+    controls.appendChild(makeBtn("+", "Zoom in", function () {
+      svg.transition().duration(200).call(zoom.scaleBy, 1.5);
+    }));
+    controls.appendChild(makeBtn("−", "Zoom out", function () {
+      svg.transition().duration(200).call(zoom.scaleBy, 1 / 1.5);
+    }));
+    controls.appendChild(makeBtn("↻", "Reset view", function () {
+      svg.transition().duration(200).call(zoom.transform, d3.zoomIdentity);
+    }));
+
+    canvas.appendChild(controls);
+  }
+
+  function drawLegend() {
+    legendBox.innerHTML = "";
+    if (!maxValue) return;
+
+    const barW = Math.max(legendBox.clientWidth - 90, 120);
+    const barH = 10;
+    const steps = 40;
+
+    const svg = d3.create("svg").attr("width", "100%").attr("height", 28)
+      .attr("viewBox", [0, 0, barW + 90, 28]);
+
+    const gradId = "__DIV_ID__-grad";
+    const defs = svg.append("defs");
+    const grad = defs.append("linearGradient").attr("id", gradId)
+      .attr("x1", "0%").attr("x2", "100%");
+    for (let i = 0; i <= steps; i++) {
+      const t = i / steps;
+      grad.append("stop").attr("offset", (t * 100) + "%").attr("stop-color", color(t * maxValue));
+    }
+
+    svg.append("text").attr("x", 0).attr("y", 20).attr("font-size", 10).attr("fill", "#898781").text("0" + VALUE_SUFFIX);
+    svg.append("rect").attr("x", 26).attr("y", 8).attr("width", barW).attr("height", barH)
+      .attr("rx", 3).attr("fill", "url(#" + gradId + ")");
+    svg.append("text").attr("x", barW + 32).attr("y", 20).attr("font-size", 10).attr("fill", "#898781")
+      .text((VALUE_SUFFIX === "%" ? maxValue.toFixed(1) : d3.format(",.0f")(maxValue)) + VALUE_SUFFIX);
+
+    legendBox.appendChild(svg.node());
+  }
+
+  let topologyCache = null;
+  fetch("https://cdn.jsdelivr.net/npm/world-atlas@2.0.2/countries-110m.json")
+    .then(function (r) { return r.json(); })
+    .then(function (topology) {
+      topologyCache = topology;
+      draw(topology);
+    })
+    .catch(function () {
+      canvas.innerHTML = '<div class="tykmap-empty">Unable to load map data.</div>';
+    });
+
+  let resizeTimer = null;
+  window.addEventListener("resize", function () {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(function () {
+      if (topologyCache) draw(topologyCache);
+    }, 150);
+  });
+})();
+</script>
+"""
+        html = (
+            template.replace("__DIV_ID__", div_id)
+            .replace("__HEIGHT__", str(height))
+            .replace("__TITLE_HTML__", title_html)
+            .replace("__DATA_JSON__", json.dumps(rows))
+            .replace("__RAMP_JSON__", json.dumps(ramp))
+            .replace("__VALUE_LABEL_JSON__", json.dumps(str(value_label)))
+            .replace("__VALUE_SUFFIX_JSON__", json.dumps(value_suffix))
+            .replace("__ARTICLES_LABEL_JSON__", json.dumps(str(articles_label)))
+        )
+        return html
+
     def plot_countries_map_global(
         self,
         *,
@@ -1499,7 +1857,23 @@ class TyK:
             return
 
         # =========================================================
-        # NOTEBOOK → PLOTLY (tu código original)
+        # NOTEBOOK → D3.js (interactive, modern default)
+        # =========================================================
+        if method not in ("plotly", "classic", "legacy"):
+            html = self._render_d3_choropleth_html(
+                df,
+                value_col="value",
+                articles_col="articles",
+                title=title,
+                height=height,
+                colorscale=colorscale,
+                show_values_as_percent=show_values_as_percent,
+            )
+            display(HTML(html))
+            return
+
+        # =========================================================
+        # NOTEBOOK → PLOTLY (legacy fallback, method="plotly")
         # =========================================================
         import plotly.graph_objects as go
 
