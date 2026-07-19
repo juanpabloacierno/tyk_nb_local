@@ -27,6 +27,10 @@
       "Bash(grep *)",
       "Bash(/opt/homebrew/bin/msgfmt /Users/juanpabloacierno/code/tyk_nb_local/tyk_notebook_app/locale/es/LC_MESSAGES/django.po -o /Users/juanpabloacierno/code/tyk_nb_local/tyk_notebook_app/locale/es/LC_MESSAGES/django.mo)",
       "Bash(/opt/homebrew/bin/msgfmt /Users/juanpabloacierno/code/tyk_nb_local/tyk_notebook_app/locale/pt/LC_MESSAGES/django.po -o /Users/juanpabloacierno/code/tyk_nb_local/tyk_notebook_app/locale/pt/LC_MESSAGES/django.mo)",
-      "Bash(node --check /tmp/overview_inline6.js)"    ]
+      "Bash(node --check /tmp/overview_inline6.js)",
+      "Bash(sqlite3 *)",
+      "Bash(DJANGO_SETTINGS_MODULE=config.settings python3 -c ' *)",
+      "Bash(DJANGO_SETTINGS_MODULE=config.settings python3 *)"
+    ]
   }
 }

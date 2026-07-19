@@ -643,6 +643,19 @@ class TyK:
         for n in nodes:
             cid = str(n.get("name") or n.get("id"))
             n["label_real"] = ""  # se decide después
+            existing = self.cluster_dict.get(cid)
+            if existing is not None:
+                # Nombres duplicados entre nodos (p.ej. un TOP y un SUB con el mismo
+                # "name") corrompen label_map_top/sub si se sobreescriben en silencio.
+                # Se conserva el primero visto y se descarta el resto.
+                if getattr(self, "verbose_notify", False):
+                    self._notify(
+                        f"Duplicate cluster id <b>{cid}</b> in <b>BCclusters.json</b> "
+                        f"(levels {existing.get('level')} and {n.get('level')}); "
+                        f"keeping the first occurrence.",
+                        "warn",
+                    )
+                continue
             self.cluster_dict[cid] = n
 
     def _load_cooc_json(self) -> bool:

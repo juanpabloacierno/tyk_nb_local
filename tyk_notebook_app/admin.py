@@ -209,8 +209,9 @@ class DashboardChartInline(admin.TabularInline):
 @admin.register(Notebook)
 class NotebookAdmin(admin.ModelAdmin):
     """Admin for Notebooks"""
-    list_display = ['name', 'slug', 'is_active', 'cell_count', 'updated_at', 'view_link']
-    list_filter = ['is_active', 'created_at']
+    list_display = ['name', 'slug', 'is_active', 'overview_enabled', 'cell_count', 'updated_at', 'view_link']
+    list_filter = ['is_active', 'overview_enabled', 'created_at']
+    list_editable = ['overview_enabled']
     search_fields = ['name', 'slug', 'description']
     prepopulated_fields = {'slug': ('name',)}
     inlines = [DashboardChartInline, CellInline]
@@ -320,7 +321,7 @@ class NotebookAdmin(admin.ModelAdmin):
 
     fieldsets = (
         (None, {
-            'fields': ('name', 'slug', 'description', 'is_active')
+            'fields': ('name', 'slug', 'description', 'is_active', 'overview_enabled')
         }),
         ('Dataset', {
             'fields': ('dataset_query',),

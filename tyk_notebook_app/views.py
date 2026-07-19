@@ -13,6 +13,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.contrib.auth.decorators import login_required
 from django.conf import settings
 from django.db.models import Q
+from django.utils.translation import get_language
 
 from .models import Notebook, Cell, Parameter, Execution, NotebookSession, DashboardChart
 from .executor import session_manager
@@ -669,7 +670,7 @@ def notebook_dataset_info(request, slug):
         with open(db_path, encoding="utf-8-sig", errors="ignore") as f:
             databases = [ln.strip() for ln in f if ln.strip()]
 
-    # --- General report (root-level PDF) ---
+    # --- General report PDF (dataset root, then clusters/ subfolder) ---
     general_report = None
     for candidate in ["report.pdf", "general_report.pdf"]:
         fp = os.path.join(path_base, candidate)
@@ -677,18 +678,46 @@ def notebook_dataset_info(request, slug):
             general_report = {"url": _rel_url(fp), "name": candidate}
             break
     if not general_report:
+        # The global overview PDF lives at the dataset root in some datasets and
+        # under clusters/ in others — check the root first, then clusters/.
+        for pattern in [
+            os.path.join(path_base, "global_overview_report*.pdf"),
+            os.path.join(path_base, "clusters", "global_overview_report*.pdf"),
+        ]:
+            matches = sorted(glob.glob(pattern))
+            if matches:
+                general_report = {"url": _rel_url(matches[0]), "name": os.path.basename(matches[0])}
+                break
+    if not general_report:
         for fp in sorted(glob.glob(os.path.join(path_base, "*.pdf"))):
             general_report = {"url": _rel_url(fp), "name": os.path.basename(fp)}
             break
 
-    # --- General summary (root-level text) ---
+    # --- General summary (root-level text, localized) ---
     general_summary = None
-    for candidate in ["executive_abstract.txt", "cluster_overview.txt", "summary.txt"]:
+    current_lang = (get_language() or "en").split("-")[0]
+    summary_candidates = ["executive_abstract.txt", "cluster_overview.txt", "summary.txt"]
+    if current_lang == "en":
+        summary_candidates = ["global_overview.txt"] + summary_candidates
+    else:
+        summary_candidates = [f"global_overview_{current_lang}.txt", "global_overview.txt"] + summary_candidates
+    for candidate in summary_candidates:
         fp = os.path.join(path_base, candidate)
         if os.path.isfile(fp):
             with open(fp, encoding="utf-8-sig", errors="ignore") as f:
-                general_summary = f.read(1500).strip()
+                general_summary = f.read().strip()
             break
+
+    # Render the summary markdown to HTML (full + a collapsed 1000-char preview).
+    general_summary_html = None
+    general_summary_preview_html = None
+    if general_summary:
+        md_exts = ['fenced_code', 'tables', 'nl2br']
+        general_summary_html = markdown.markdown(general_summary, extensions=md_exts)
+        if len(general_summary) > 1000:
+            general_summary_preview_html = markdown.markdown(
+                general_summary[:1000].rstrip() + " …", extensions=md_exts
+            )
 
     # --- Hierarchical PDF reports ---
     label_map_top = getattr(tyk_obj, "label_map_top", {})
@@ -757,6 +786,8 @@ def notebook_dataset_info(request, slug):
         "databases": databases,
         "general_report": general_report,
         "general_summary": general_summary,
+        "general_summary_html": general_summary_html,
+        "general_summary_preview_html": general_summary_preview_html,
         "pdf_reports": pdf_reports,
         "freq_files": freq_files,
     })
@@ -811,6 +842,8 @@ def notebook_cluster_options(request, slug):
 def overview_detail(request, slug):
     """Display the Overview screen for a notebook."""
     notebook = get_object_or_404(Notebook, slug=slug, is_active=True)
+    if not notebook.overview_enabled:
+        raise Http404("Overview is disabled for this notebook.")
     nb_session, _ = NotebookSession.objects.get_or_create(
         notebook=notebook, user=request.user, defaults={"parameter_values": {}}
     )

@@ -16,7 +16,7 @@
 <div class="mb-6">
     <div class="flex items-center justify-between">
         <div>
-            <h1 class="text-2xl font-bold text-gray-900">{{ notebook.name }}</h1>
+            <h1 class="text-2xl font-bold text-gray-900 text-left">{{ notebook.name }}</h1>
             {% if notebook.description %}
             <p class="mt-1 text-gray-600">{{ notebook.description }}</p>
             {% endif %}
@@ -52,18 +52,27 @@
         <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{% trans "Articles" %}</div>
         <div class="text-sm font-semibold text-gray-800"><span id="di-article-count"></span></div>
       </div>
-      <div id="di-query-block" style="display:none; max-width:520px;">
+      <div id="di-query-block" style="display:none; flex:1 1 auto; min-width:0;">
         <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{% trans "Search Query" %}</div>
         <p id="di-query-text" class="text-xs text-gray-700 leading-snug font-mono bg-gray-50 rounded px-2 py-1.5 border border-gray-200 whitespace-pre-wrap"></p>
       </div>
     </div>
 
-    <!-- Summary + report link -->
-    <div class="mb-4">
-      <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-1">{% trans "Summary" %}</div>
-      <p id="di-general-summary" class="text-xs text-gray-500 italic leading-snug">{% trans "No summary available." %}</p>
-      <a id="di-general-report-link" href="#" target="_blank"
-         class="hidden mt-1.5 inline-block text-xs font-medium text-blue-600 hover:underline">{% trans "View full report" %} →</a>
+    <!-- Reporte General + report link -->
+    <div id="di-summary-block" class="mb-4" style="display:none;">
+      <div class="mb-1">
+        <div class="text-xs font-semibold text-gray-500 uppercase tracking-wide">{% trans "Reporte General" %}</div>
+      </div>
+      <a id="di-general-report-download" href="#" download
+         class="hidden mb-1.5 inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:underline">
+        <svg class="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+        </svg>
+        {% trans "Ver Reporte Global" %}
+      </a>
+      <div id="di-general-summary" class="md-summary text-xs text-gray-700 leading-snug"></div>
+      <button type="button" id="di-summary-toggle"
+              class="hidden mt-1 text-xs font-medium text-blue-600 hover:underline"></button>
     </div>
 
     <!-- Bottom row: PDF reports + freq files -->
@@ -519,6 +528,25 @@ async function resetSession() {
 // All executable cells, in order
 const autoRunCells = [{% for item in cells_data %}{% if item.cell.cell_type != 'markdown' %}{{ item.cell.id }},{% endif %}{% endfor %}];
 
+// Render the summary (already markdown-rendered HTML). Collapsed shows the
+// preview (first ~1000 chars rendered); the toggle swaps to the full HTML
+// in-place (no duplication of the leading text).
+function setupSummary(fullHtml, previewHtml, textEl, toggleEl) {
+    if (!previewHtml) {
+        textEl.innerHTML = fullHtml;
+        toggleEl.classList.add('hidden');
+        return;
+    }
+    let expanded = false;
+    const render = () => {
+        textEl.innerHTML = expanded ? fullHtml : previewHtml;
+        toggleEl.textContent = expanded ? '{% trans "Show less" %}' : '{% trans "Show more" %}';
+    };
+    toggleEl.classList.remove('hidden');
+    toggleEl.onclick = () => { expanded = !expanded; render(); };
+    render();
+}
+
 // Dataset info panel
 async function loadDatasetInfo() {
     try {
@@ -541,19 +569,25 @@ async function loadDatasetInfo() {
             document.getElementById('di-query-text').textContent = d.dataset_query;
         }
 
-        // General summary (always visible, placeholder already in HTML)
-        if (d.general_summary) {
-            const el = document.getElementById('di-general-summary');
-            el.textContent = d.general_summary;
-            el.classList.remove('italic', 'text-gray-500');
-            el.classList.add('text-gray-700');
+        // Summary + report link (block hidden unless one of them exists)
+        if (d.general_summary || d.general_report) {
+            document.getElementById('di-summary-block').style.display = '';
         }
 
-        // Report link
+        if (d.general_summary) {
+            setupSummary(
+                d.general_summary_html,
+                d.general_summary_preview_html,
+                document.getElementById('di-general-summary'),
+                document.getElementById('di-summary-toggle')
+            );
+        }
+
         if (d.general_report) {
-            const link = document.getElementById('di-general-report-link');
-            link.href = d.general_report.url;
-            link.classList.remove('hidden');
+            const dl = document.getElementById('di-general-report-download');
+            dl.href = d.general_report.url;
+            if (d.general_report.name) dl.setAttribute('download', d.general_report.name);
+            dl.classList.remove('hidden');
         }
 
         // PDF reports

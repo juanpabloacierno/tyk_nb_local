@@ -18,6 +18,7 @@ class Notebook(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     is_active = models.BooleanField(default=True)
+    overview_enabled = models.BooleanField(default=True, help_text="Show the Overview button/page for this notebook")
 
     class Meta:
         ordering = ['-updated_at']

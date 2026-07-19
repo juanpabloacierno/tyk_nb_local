@@ -1,0 +1,12 @@
+- agregar .dats (articles.dat)
+	- generar listas de articulos por nodo
+
+- qutar instituciones de grafico de coocurrencia
+- quitar palabras comunes en castellano
+
+- crear listas completas para cada tipo de extracto, cluster_top keywords, institutions, en el corriente
+
+- guias lectura
+
+- agregar doi downloader for openalex
+
