@@ -10,6 +10,7 @@ from django.shortcuts import render, get_object_or_404, redirect
 from django.http import JsonResponse, HttpResponse, FileResponse, Http404
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.clickjacking import xframe_options_sameorigin
 from django.contrib.auth.decorators import login_required
 from django.conf import settings
 from django.db.models import Q
@@ -779,6 +780,20 @@ def notebook_dataset_info(request, slug):
             with open(query_txt, encoding="utf-8-sig", errors="ignore") as f:
                 dataset_query = f.read().strip()
 
+    # --- Temporal evolution (subnode lineage) interactive HTML ---
+    # The filename is prefixed with the dataset name in some datasets
+    # (e.g. fermentation_allinone_...), so glob for the suffix.
+    temporal_evolution = None
+    for pattern in [
+        os.path.join(path_base, "allinone_selected_subnodes_lineage.html"),
+        os.path.join(path_base, "*allinone_selected_subnodes_lineage.html"),
+        os.path.join(path_base, "clusters", "*allinone_selected_subnodes_lineage.html"),
+    ]:
+        matches = sorted(glob.glob(pattern))
+        if matches:
+            temporal_evolution = {"url": _rel_url(matches[0]), "name": os.path.basename(matches[0])}
+            break
+
     return JsonResponse({
         "ready": True,
         "dataset_query": dataset_query,
@@ -790,6 +805,7 @@ def notebook_dataset_info(request, slug):
         "general_summary_preview_html": general_summary_preview_html,
         "pdf_reports": pdf_reports,
         "freq_files": freq_files,
+        "temporal_evolution": temporal_evolution,
     })
 
 
@@ -980,8 +996,13 @@ def notebook_dialog_query(request, slug):
 
 
 @login_required
+@xframe_options_sameorigin
 def serve_data_file(request, filepath):
-    """Serve a file from within the TYK_DATA_PATH directory."""
+    """Serve a file from within the TYK_DATA_PATH directory.
+
+    Marked SAMEORIGIN so served HTML (e.g. the temporal-evolution lineage view)
+    can be embedded in a same-origin <iframe>; Django's default is DENY.
+    """
     base = os.path.normpath(settings.TYK_DATA_PATH)
     full_path = os.path.normpath(os.path.join(base, filepath))
     if not full_path.startswith(base + os.sep) and full_path != base:

@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: TyK Notebook 1.0\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2024-01-01 00:00+0000\n"
+"POT-Creation-Date: 2026-07-22 21:11+0000\n"
 "PO-Revision-Date: 2024-01-01 00:00+0000\n"
 "Last-Translator: \n"
 "Language-Team: Portuguese\n"
@@ -26,6 +26,306 @@ msgstr "Espanhol"
 msgid "Portuguese"
 msgstr "Português"
 
+msgid "<b>BCclusters.json</b> not found. Some functions may not be available."
+msgstr ""
+"<b>BCclusters.json</b> não encontrado. Algumas funções podem não estar "
+"disponíveis."
+
+# TyK class - load_cluster_summaries
+#, python-brace-format
+msgid "Summaries loaded: <b>{count}</b>"
+msgstr "Resumos carregados: <b>{count}</b>"
+
+# TyK class - map labels
+msgid "Articles: "
+msgstr "Artigos: "
+
+msgid "Frequency: "
+msgstr "Frequência: "
+
+msgid "Frequency (%)"
+msgstr "Frequência (%)"
+
+msgid "Frequency"
+msgstr "Frequência"
+
+#, fuzzy
+#| msgid "Value: "
+msgid "Value"
+msgstr "Valor: "
+
+msgid "Articles"
+msgstr "Artigos"
+
+msgid "No global country data available. Run tyk.refresh_aggregates()."
+msgstr "Sem dados globais de países. Execute tyk.refresh_aggregates()."
+
+msgid "Could not map countries to ISO3 codes."
+msgstr "Não foi possível mapear países a códigos ISO3."
+
+msgid "Countries — Global distribution of publications"
+msgstr "Países — Distribuição global de publicações"
+
+msgid "Value: "
+msgstr "Valor: "
+
+msgid "Amount"
+msgstr "Quantidade"
+
+#, python-brace-format
+msgid "No country distribution (C) for cluster {id}."
+msgstr "Sem distribuição de países (C) para o cluster {id}."
+
+#, python-brace-format
+msgid "Could not build country table for cluster {id}."
+msgstr "Não foi possível construir a tabela de países para o cluster {id}."
+
+#, python-brace-format
+msgid "Could not map countries to ISO3 for cluster {id}."
+msgstr "Não foi possível mapear países para ISO3 para o cluster {id}."
+
+#, python-brace-format
+msgid "Countries — Cluster {id}"
+msgstr "Países — Cluster {id}"
+
+# TyK class - clusters table
+msgid "No TOP clusters available."
+msgstr "Nenhum cluster TOP disponível."
+
+#, python-brace-format
+msgid "TOP <b>{top}</b> has no subclusters."
+msgstr "O TOP <b>{top}</b> não tem subclusters."
+
+msgid "No subclusters to display."
+msgstr "Nenhum subcluster para exibir."
+
+msgid "Name"
+msgstr "Nome"
+
+msgid "Subclusters"
+msgstr "Subclusters"
+
+#, python-brace-format
+msgid "Available <b>TOP</b> Clusters (total: {total})"
+msgstr "Clusters <b>TOP</b> disponíveis (total: {total})"
+
+#, python-brace-format
+msgid "Subclusters of <b>{top}</b> (ID {id}) (total: {total})"
+msgstr "Subclusters de <b>{top}</b> (ID {id}) (total: {total})"
+
+#, python-brace-format
+msgid "Available Subclusters (total: {total})"
+msgstr "Subclusters disponíveis (total: {total})"
+
+# TyK class - vis network
+msgid "Size"
+msgstr "Tamanho"
+
+msgid "Edge threshold"
+msgstr "Limiar de aresta"
+
+msgid "Cluster"
+msgstr "Cluster"
+
+msgid "No summary available."
+msgstr "Sem resumo disponível."
+
+msgid "View full report"
+msgstr "Ver relatório completo"
+
+msgid "Click a node to read its summary"
+msgstr "Clique em um nó para ler seu resumo"
+
+msgid "size: "
+msgstr "tamanho: "
+
+# TyK class - chart titles and defaults
+msgid "Cluster Graph (TOP)"
+msgstr "Grafo de Clusters (TOP)"
+
+msgid "Size (articles)"
+msgstr "Tamanho (artigos)"
+
+#, python-brace-format
+msgid "Edge threshold: ≥ {threshold}"
+msgstr "Limiar de aresta: ≥ {threshold}"
+
+# TyK class - notifications
+#, python-brace-format
+msgid "TOP <b>{top}</b> not found (use ID or exact name)."
+msgstr "TOP <b>{top}</b> não encontrado (use ID ou nome exato)."
+
+#, fuzzy, python-brace-format
+#| msgid "TOP <b>{top}</b> has no subclusters."
+msgid "TOP <b>{top}</b> (ID {id}) has no subclusters."
+msgstr "O TOP <b>{top}</b> não tem subclusters."
+
+#, python-brace-format
+msgid "Subclusters of {label}"
+msgstr "Subclusters de {label}"
+
+msgid "Co-occurrence network"
+msgstr "Rede de co-ocorrência"
+
+msgid "No co-occurrence data loaded. Cannot plot network."
+msgstr "Sem dados de co-ocorrência carregados. Não é possível plotar a rede."
+
+#, python-brace-format
+msgid "No nodes of type <b>{type}</b> found."
+msgstr "Nenhum nó do tipo <b>{type}</b> encontrado."
+
+# TyK class - describe_cluster_params
+#, python-brace-format
+msgid "Invalid level: <b>{level}</b>. Use <b>TOP</b> or <b>SUB</b>."
+msgstr "Nível inválido: <b>{level}</b>. Use <b>TOP</b> ou <b>SUB</b>."
+
+msgid "Available TOP Clusters"
+msgstr "Clusters TOP disponíveis"
+
+msgid "Specify <b>cluster_top</b> (ID or name) to visualize."
+msgstr "Indique <b>cluster_top</b> (ID ou nome) para visualizar."
+
+#, python-brace-format
+msgid "TOP <b>{top}</b> not found."
+msgstr "TOP <b>{top}</b> não encontrado."
+
+msgid "Level: "
+msgstr "Nível: "
+
+msgid "Cluster: "
+msgstr "Cluster: "
+
+msgid "Type: "
+msgstr "Tipo: "
+
+#, python-brace-format
+msgid "Subclusters of TOP {name} (ID {id})"
+msgstr "Subclusters do TOP {name} (ID {id})"
+
+msgid "Specify <b>cluster_sub</b> (ID or name) to visualize."
+msgstr "Indique <b>cluster_sub</b> (ID ou nome) para visualizar."
+
+#, python-brace-format
+msgid "SUB <b>{sub}</b> does not exist in TOP <b>{top}</b> (ID {id})."
+msgstr "O SUB <b>{sub}</b> não existe no TOP <b>{top}</b> (ID {id})."
+
+# TyK class - stuff_titles
+msgid "Publications by year"
+msgstr "Publicações por ano"
+
+msgid "Most Cited Articles"
+msgstr "Artigos mais citados"
+
+msgid "Most Representative Articles"
+msgstr "Artigos mais representativos"
+
+msgid "Most Cited Authors"
+msgstr "Autores mais citados"
+
+# TyK class - build_figure
+#, python-brace-format
+msgid "{name}: no data for <b>{type}</b>."
+msgstr "{name}: sem dados para <b>{type}</b>."
+
+msgid "Year"
+msgstr "Ano"
+
+msgid "Lower weight"
+msgstr "Menor peso"
+
+msgid "Higher weight"
+msgstr "Maior peso"
+
+msgid "No. articles"
+msgstr "Nº artigos"
+
+msgid "articles"
+msgstr "artigos"
+
+msgid "Keywords"
+msgstr "Palavras-chave"
+
+msgid "Title Words"
+msgstr "Palavras do Título"
+
+msgid "Subject Categories"
+msgstr "Categorias temáticas"
+
+msgid "Subject Sub-Categories"
+msgstr "Sub-categorias temáticas"
+
+msgid "Journal Sources"
+msgstr "Fontes de revista"
+
+msgid "Countries"
+msgstr "Países"
+
+msgid "Institutions"
+msgstr "Instituições"
+
+msgid "References"
+msgstr "Referências"
+
+msgid "Reference Sources"
+msgstr "Fontes de referência"
+
+msgid "Authors (Freq)"
+msgstr "Autores (Freq)"
+
+#, fuzzy
+#| msgid "Most Cited Authors"
+msgid "Most Cited Papers"
+msgstr "Autores mais citados"
+
+#, fuzzy
+#| msgid "Most Representative Articles"
+msgid "Most Representative Papers"
+msgstr "Artigos mais representativos"
+
+# TyK class - rename_cluster
+msgid "The parameter <b>level</b> must be 'TOP' or 'SUB'."
+msgstr "O parâmetro <b>level</b> deve ser 'TOP' ou 'SUB'."
+
+msgid "Specify a <b>cluster</b> (ID or name) to rename."
+msgstr "Indique um <b>cluster</b> (ID ou nome) para renomear."
+
+msgid "Specify the <b>new name</b> (new_name) to rename."
+msgstr "Indique o <b>novo nome</b> (new_name) para renomear."
+
+#, python-brace-format
+msgid ""
+"<b>Renamed successfully</b> — Level: <b>{level}</b> · ID: <code>{id}</code> "
+"· <i>{old}</i> → <b>{new}</b>"
+msgstr ""
+"<b>Renomeado com sucesso</b> — Nível: <b>{level}</b> · ID: <code>{id}</code> "
+"· <i>{old}</i> → <b>{new}</b>"
+
+#, python-brace-format
+msgid ""
+"SUB <code>{sid}</code> does not belong to the specified TOP (<b>{top}</b>, "
+"ID <code>{id}</code>)."
+msgstr ""
+"O SUB <code>{sid}</code> não pertence ao TOP indicado (<b>{top}</b>, ID "
+"<code>{id}</code>)."
+
+msgid ""
+"If the name exists in more than one TOP, also specify <b>top_id</b> (ID or "
+"name of the TOP)."
+msgstr ""
+"Se o nome existir em mais de um TOP, indique também <b>top_id</b> (ID ou "
+"nome do TOP)."
+
+#, python-brace-format
+msgid "SUB <b>{sub}</b> not found."
+msgstr "SUB <b>{sub}</b> não encontrado."
+
+msgid ""
+"The specified name matches multiple SUBs in different TOPs. Specify "
+"<b>top_id</b> to disambiguate:"
+msgstr ""
+"O nome indicado coincide com múltiplos SUBs em diferentes TOPs. Indique "
+"<b>top_id</b> para desambiguar:"
+
 # Admin site headers
 msgid "TyK Tools Administration"
 msgstr "Administração TyK Tools"
@@ -35,6 +335,29 @@ msgstr "Admin TyK Tools"
 
 msgid "Welcome to TyK Tools Administration"
 msgstr "Bem-vindo à Administração TyK Tools"
+
+# Admin - import notebook page
+msgid "Import Notebook"
+msgstr "Importar Caderno"
+
+msgid ""
+"Upload a Python script (.py) or Jupyter notebook (.ipynb) file to import it "
+"into the system."
+msgstr ""
+"Envie um script Python (.py) ou um caderno Jupyter (.ipynb) para importá-lo "
+"ao sistema."
+
+msgid "Notebook File"
+msgstr "Arquivo do Caderno"
+
+msgid "Notebook Details (Optional)"
+msgstr "Detalhes do Caderno (Opcional)"
+
+msgid "Import Options"
+msgstr "Opções de Importação"
+
+msgid "Cancel"
+msgstr "Cancelar"
 
 # Base template - Navigation
 msgid "TyK Notebook"
@@ -59,52 +382,135 @@ msgstr "Aplicação TyK Notebook"
 msgid "Interactive Data Analysis"
 msgstr "Análise de Dados Interativa"
 
-# List page
-msgid "Notebooks"
-msgstr "Cadernos"
-
-msgid "Available Notebooks"
-msgstr "Cadernos Disponíveis"
-
-msgid "Select a notebook to start interactive analysis"
-msgstr "Selecione um caderno para iniciar a análise interativa"
-
-#, python-format
-msgid "%(counter)s cell"
-msgid_plural "%(counter)s cells"
-msgstr[0] "%(counter)s célula"
-msgstr[1] "%(counter)s células"
-
-#, python-format
-msgid "Updated %(time)s ago"
-msgstr "Atualizado há %(time)s"
-
-msgid "No description available"
-msgstr "Sem descrição disponível"
-
-msgid "Open Dashboard View"
-msgstr "Abrir Vista do Dashboard"
-
 msgid "Dashboard"
 msgstr "Dashboard"
 
-msgid "Open Classic View"
-msgstr "Abrir Vista Clássica"
+# Dashboard page
+msgid "Classic View"
+msgstr "Vista Clássica"
 
 msgid "History"
 msgstr "Histórico"
 
-msgid "Export as .py file"
-msgstr "Exportar como arquivo .py"
+msgid "Reset"
+msgstr "Reiniciar"
 
-msgid "No notebooks available"
-msgstr "Nenhum caderno disponível"
+msgid "Initialize"
+msgstr "Inicializar"
 
-msgid "Import a notebook using the admin interface to get started."
-msgstr "Importe um caderno usando a interface de administração para começar."
+msgid "Ready."
+msgstr "Pronto."
 
-msgid "Go to Admin"
-msgstr "Ir para Admin"
+msgid "Dashboard will load automatically."
+msgstr "O dashboard será carregado automaticamente."
+
+msgid "Not initialized."
+msgstr "Não inicializado."
+
+msgid "Click \\"
+msgstr ""
+
+msgid "Dataset Description, Parameters and Results"
+msgstr ""
+
+msgid "Search Query"
+msgstr ""
+
+msgid "Reporte General"
+msgstr ""
+
+msgid "Ver Reporte Global"
+msgstr ""
+
+msgid "Reports"
+msgstr "Relatórios"
+
+msgid "Frequency Files"
+msgstr "Arquivos de frequência"
+
+msgid "Refresh"
+msgstr "Atualizar"
+
+msgid "Select a cluster first"
+msgstr "Selecione um cluster primeiro"
+
+msgid "Click Initialize to load"
+msgstr "Clique em Inicializar para carregar"
+
+msgid "Notebook Cells"
+msgstr "Células do Caderno"
+
+msgid "Untitled"
+msgstr "Sem Título"
+
+msgid "Run"
+msgstr "Executar"
+
+msgid "Output"
+msgstr "Saída"
+
+# JavaScript UI strings - detail page
+msgid "Initializing..."
+msgstr "Inicializando..."
+
+#, fuzzy
+#| msgid "Ready."
+msgid "Ready"
+msgstr "Pronto."
+
+# JavaScript UI strings - dashboard page
+msgid "Loading dashboard..."
+msgstr "Carregando dashboard..."
+
+msgid "Failed:"
+msgstr "Falha:"
+
+msgid "Retry"
+msgstr "Tentar novamente"
+
+msgid "Error:"
+msgstr "Erro:"
+
+msgid "Loading..."
+msgstr "Carregando..."
+
+msgid "No output"
+msgstr "Sem saída"
+
+msgid "Initialize notebook first"
+msgstr "Inicialize o caderno primeiro"
+
+msgid "Please initialize the notebook first"
+msgstr "Por favor, inicialize o caderno primeiro"
+
+msgid "Reset the notebook session?"
+msgstr "Reiniciar a sessão do caderno?"
+
+msgid "Failed to reset: "
+msgstr "Erro ao reiniciar: "
+
+#, fuzzy
+#| msgid "Show all traces"
+msgid "Show less"
+msgstr "Mostrar todos os traces"
+
+msgid "Show more"
+msgstr ""
+
+#, fuzzy
+#| msgid "Select a cluster first"
+msgid "select cluster"
+msgstr "Selecione um cluster primeiro"
+
+#, fuzzy
+#| msgid "Select a cluster first"
+msgid "select subcluster"
+msgstr "Selecione um cluster primeiro"
+
+#, fuzzy
+#| msgid "Select a cluster first"
+msgid "select cluster first"
+msgstr "Selecione um cluster primeiro"
 
 # Detail page
 msgid "Execution Log"
@@ -124,9 +530,6 @@ msgstr "Agora você pode executar células."
 
 msgid "Notebook not initialized."
 msgstr "Caderno não inicializado."
-
-msgid "Click \"Initialize Notebook\" to set up the environment before running cells."
-msgstr "Clique em \"Inicializar Caderno\" para configurar o ambiente antes de executar as células."
 
 msgid "Debugging Tools Available"
 msgstr "Ferramentas de Depuração Disponíveis"
@@ -164,84 +567,23 @@ msgstr "Célula Sem Título"
 msgid "auto-run"
 msgstr "auto-executar"
 
-msgid "Run"
-msgstr "Executar"
-
-msgid "Output"
-msgstr "Saída"
-
 msgid "View Code"
 msgstr "Ver Código"
 
-# Dashboard page
-msgid "Classic View"
-msgstr "Vista Clássica"
+msgid "Initialized"
+msgstr "Inicializado"
 
-msgid "Reset"
-msgstr "Reiniciar"
+msgid "Initialization failed."
+msgstr "Falha na inicialização."
 
-msgid "Initialize"
-msgstr "Inicializar"
+msgid "Running..."
+msgstr "Executando..."
 
-msgid "Ready."
-msgstr "Pronto."
+msgid "Reset the notebook session? This will clear all execution state."
+msgstr "Reiniciar a sessão do caderno? Isso limpará todo o estado de execução."
 
-msgid "Dashboard will load automatically."
-msgstr "O dashboard será carregado automaticamente."
-
-msgid "Not initialized."
-msgstr "Não inicializado."
-
-msgid "Click \"Initialize\" to load data and charts."
-msgstr "Clique em \"Inicializar\" para carregar dados e gráficos."
-
-msgid "Refresh All"
-msgstr "Atualizar Tudo"
-
-msgid "Cluster"
-msgstr "Cluster"
-
-msgid "Select"
-msgstr "Selecionar"
-
-msgid "Colorscale"
-msgstr "Escala de Cores"
-
-msgid "Co-oc Type"
-msgstr "Tipo Co-oc"
-
-msgid "Keywords"
-msgstr "Palavras-chave"
-
-msgid "Title Words"
-msgstr "Palavras do Título"
-
-msgid "Authors"
-msgstr "Autores"
-
-msgid "Journals"
-msgstr "Revistas"
-
-msgid "Countries"
-msgstr "Países"
-
-msgid "Institutions"
-msgstr "Instituições"
-
-msgid "Max Nodes"
-msgstr "Máx. Nós"
-
-msgid "Refresh"
-msgstr "Atualizar"
-
-msgid "Select a cluster first"
-msgstr "Selecione um cluster primeiro"
-
-msgid "Click Initialize to load"
-msgstr "Clique em Inicializar para carregar"
-
-msgid "Notebook Cells"
-msgstr "Células do Caderno"
+msgid "Failed to reset session: "
+msgstr "Erro ao reiniciar a sessão: "
 
 # History page
 msgid "Execution History"
@@ -265,9 +607,6 @@ msgstr "Parâmetros"
 msgid "Executed"
 msgstr "Executado"
 
-msgid "Untitled"
-msgstr "Sem Título"
-
 msgid "None"
 msgstr "Nenhum"
 
@@ -277,6 +616,253 @@ msgstr "há %(time)s"
 
 msgid "No execution history available."
 msgstr "Nenhum histórico de execução disponível."
+
+# List page
+msgid "Notebooks"
+msgstr "Cadernos"
+
+msgid "Available Notebooks"
+msgstr "Cadernos Disponíveis"
+
+msgid "Select a notebook to start interactive analysis"
+msgstr "Selecione um caderno para iniciar a análise interativa"
+
+#, python-format
+msgid "%(counter)s cell"
+msgid_plural "%(counter)s cells"
+msgstr[0] "%(counter)s célula"
+msgstr[1] "%(counter)s células"
+
+#, python-format
+msgid "Updated %(time)s ago"
+msgstr "Atualizado há %(time)s"
+
+msgid "No description available"
+msgstr "Sem descrição disponível"
+
+msgid "Open Overview"
+msgstr ""
+
+msgid "Overview"
+msgstr ""
+
+msgid "Open Dashboard View"
+msgstr "Abrir Vista do Dashboard"
+
+msgid "Open Classic View"
+msgstr "Abrir Vista Clássica"
+
+msgid "Export as .py file"
+msgstr "Exportar como arquivo .py"
+
+msgid "No notebooks available"
+msgstr "Nenhum caderno disponível"
+
+msgid "Import a notebook using the admin interface to get started."
+msgstr "Importe um caderno usando a interface de administração para começar."
+
+msgid "Go to Admin"
+msgstr "Ir para Admin"
+
+msgid "Overview loaded."
+msgstr ""
+
+msgid "Explore Data"
+msgstr ""
+
+msgid "Scope"
+msgstr ""
+
+msgid "Full Network"
+msgstr ""
+
+#, fuzzy
+#| msgid "Subclusters"
+msgid "Subcluster"
+msgstr "Subclusters"
+
+#, fuzzy
+#| msgid "Cluster"
+msgid "Top Cluster"
+msgstr "Cluster"
+
+#, fuzzy
+#| msgid "Select"
+msgid "select"
+msgstr "Selecionar"
+
+#, fuzzy
+#| msgid "Show object details"
+msgid "View cluster details"
+msgstr "Mostrar detalhes do objeto"
+
+msgid "Asking about"
+msgstr ""
+
+#, fuzzy
+#| msgid "View full report"
+msgid "the full network"
+msgstr "Ver relatório completo"
+
+msgid "Pick a scope and a question above to explore the dataset."
+msgstr ""
+
+msgid "Dataset Details"
+msgstr ""
+
+#, fuzzy
+#| msgid "Click \"Initialize\" to load data and charts."
+msgid "Initialize to load dataset details."
+msgstr "Clique em \"Inicializar\" para carregar dados e gráficos."
+
+msgid "Full Network Nodes Overview"
+msgstr ""
+
+#, fuzzy
+#| msgid "Click \"Initialize\" to load data and charts."
+msgid "Initialize to load the dynamic view."
+msgstr "Clique em \"Inicializar\" para carregar dados e gráficos."
+
+msgid "Dataset"
+msgstr ""
+
+msgid "Network Temporal Evolution"
+msgstr ""
+
+msgid "Temporal evolution data will appear here."
+msgstr ""
+
+#, fuzzy
+#| msgid "Loading..."
+msgid "Loading overview..."
+msgstr "Carregando..."
+
+msgid "Expand"
+msgstr ""
+
+msgid "No temporal evolution data available for this dataset."
+msgstr ""
+
+msgid ""
+"What are the 5 most important texts I should read to understand [[scope]]?"
+msgstr ""
+
+msgid "Provide a list of the most relevant methodologies used in [[scope]]"
+msgstr ""
+
+msgid ""
+"Provide a breakdown of the main theoretical frameworks deployed in [[scope]]"
+msgstr ""
+
+msgid ""
+"Provide a guide of questions for conducting an in-depth interview with the "
+"main authors of [[scope]]"
+msgstr ""
+
+msgid "the cluster (select one)"
+msgstr ""
+
+#, fuzzy
+#| msgid "Cluster"
+msgid "the cluster"
+msgstr "Cluster"
+
+#, fuzzy
+#| msgid "Select a cluster first"
+msgid "the subcluster (select a cluster first)"
+msgstr "Selecione um cluster primeiro"
+
+msgid "the subcluster (select one)"
+msgstr ""
+
+#, fuzzy
+#| msgid "Subclusters"
+msgid "the subcluster"
+msgstr "Subclusters"
+
+#, fuzzy
+#| msgid "Please initialize the notebook first"
+msgid "Please initialize first."
+msgstr "Por favor, inicialize o caderno primeiro"
+
+#, fuzzy
+#| msgid "Select a cluster first"
+msgid "Select a cluster and a subcluster first."
+msgstr "Selecione um cluster primeiro"
+
+#, fuzzy
+#| msgid "Select a cluster first"
+msgid "Select a cluster first."
+msgstr "Selecione um cluster primeiro"
+
+msgid ""
+"This answer will be generated from the analyzed dataset (backend coming "
+"next)."
+msgstr ""
+
+#, fuzzy
+#| msgid "Cluster: "
+msgid "Cluster List"
+msgstr "Cluster: "
+
+#, fuzzy
+#| msgid "Countries"
+msgid "Countries Map"
+msgstr "Países"
+
+#, fuzzy
+#| msgid "Keywords"
+msgid "Top Keywords"
+msgstr "Palavras-chave"
+
+#, fuzzy
+#| msgid "Cluster: "
+msgid "Cluster Detail"
+msgstr "Cluster: "
+
+#, fuzzy
+#| msgid "Subclusters"
+msgid "Subcluster List"
+msgstr "Subclusters"
+
+#, fuzzy
+#| msgid "Subclusters"
+msgid "Subcluster Detail"
+msgstr "Subclusters"
+
+#, fuzzy
+#| msgid "Error:"
+msgid "Error"
+msgstr "Erro:"
+
+#, fuzzy
+#| msgid "Select a cluster first"
+msgid "Please select a cluster."
+msgstr "Selecione um cluster primeiro"
+
+#, fuzzy
+#| msgid "Loading..."
+msgid "Loading dynamic view..."
+msgstr "Carregando..."
+
+msgid "Data not available. Please initialize first."
+msgstr ""
+
+msgid "Error loading dynamic view:"
+msgstr ""
+
+# Logged out page
+msgid "Logged Out"
+msgstr "Sessão Encerrada"
+
+msgid "You have been logged out"
+msgstr "Você saiu"
+
+msgid "You have successfully logged out of your account."
+msgstr "Você saiu da sua conta com sucesso."
+
+msgid "Sign In Again"
+msgstr "Entrar Novamente"
 
 # Login page
 msgid "Login"
@@ -297,49 +883,14 @@ msgstr "Entrar"
 msgid "Forgot your password?"
 msgstr "Esqueceu sua senha?"
 
-# Logged out page
-msgid "Logged Out"
-msgstr "Sessão Encerrada"
+msgid "Password Reset Complete"
+msgstr "Redefinição de Senha Concluída"
 
-msgid "You have been logged out"
-msgstr "Você saiu"
+msgid "Success!"
+msgstr "Sucesso!"
 
-msgid "You have successfully logged out of your account."
-msgstr "Você saiu da sua conta com sucesso."
-
-msgid "Sign In Again"
-msgstr "Entrar Novamente"
-
-# Password reset pages
-msgid "Reset Password"
-msgstr "Redefinir Senha"
-
-msgid "Reset your password"
-msgstr "Redefina sua senha"
-
-msgid "Enter your email address and we'll send you instructions to reset your password."
-msgstr "Insira seu endereço de e-mail e enviaremos instruções para redefinir sua senha."
-
-msgid "Email Address"
-msgstr "Endereço de E-mail"
-
-msgid "Send Reset Link"
-msgstr "Enviar Link de Redefinição"
-
-msgid "Back to login"
-msgstr "Voltar ao login"
-
-msgid "Password Reset Sent"
-msgstr "Redefinição de Senha Enviada"
-
-msgid "Check your email"
-msgstr "Verifique seu e-mail"
-
-msgid "We've sent you an email with instructions to reset your password. Please check your inbox and follow the link."
-msgstr "Enviamos um e-mail com instruções para redefinir sua senha. Por favor verifique sua caixa de entrada e siga o link."
-
-msgid "If you don't receive an email within a few minutes, please check your spam folder."
-msgstr "Se não receber um e-mail em alguns minutos, verifique sua pasta de spam."
+msgid "Your password has been reset successfully!"
+msgstr "Sua senha foi redefinida com sucesso!"
 
 msgid "Set New Password"
 msgstr "Definir Nova Senha"
@@ -353,342 +904,78 @@ msgstr "Nova Senha"
 msgid "Confirm New Password"
 msgstr "Confirmar Nova Senha"
 
+# Password reset pages
+msgid "Reset Password"
+msgstr "Redefinir Senha"
+
 msgid "This password reset link is invalid or has expired."
 msgstr "Este link de redefinição de senha é inválido ou expirou."
 
 msgid "Request New Reset Link"
 msgstr "Solicitar Novo Link de Redefinição"
 
-msgid "Password Reset Complete"
-msgstr "Redefinição de Senha Concluída"
-
-msgid "Success!"
-msgstr "Sucesso!"
-
-msgid "Your password has been reset successfully!"
-msgstr "Sua senha foi redefinida com sucesso!"
-
-# JavaScript UI strings - detail page
-msgid "Initializing..."
-msgstr "Inicializando..."
-
-msgid "Initialization failed."
-msgstr "Falha na inicialização."
-
-msgid "Initialized"
-msgstr "Inicializado"
-
-msgid "Retry"
-msgstr "Tentar novamente"
-
-msgid "Error:"
-msgstr "Erro:"
-
-msgid "Running..."
-msgstr "Executando..."
-
-msgid "Reset the notebook session? This will clear all execution state."
-msgstr "Reiniciar a sessão do caderno? Isso limpará todo o estado de execução."
-
-msgid "Failed to reset session: "
-msgstr "Erro ao reiniciar a sessão: "
-
-# JavaScript UI strings - dashboard page
-msgid "Loading dashboard..."
-msgstr "Carregando dashboard..."
-
-msgid "Failed:"
-msgstr "Falha:"
-
-msgid "Loading..."
-msgstr "Carregando..."
-
-msgid "No output"
-msgstr "Sem saída"
-
-msgid "Initialize notebook first"
-msgstr "Inicialize o caderno primeiro"
-
-msgid "Please initialize the notebook first"
-msgstr "Por favor, inicialize o caderno primeiro"
-
-msgid "Reset the notebook session?"
-msgstr "Reiniciar a sessão do caderno?"
-
-msgid "Failed to reset: "
-msgstr "Erro ao reiniciar: "
-
-# Admin - import notebook page
-msgid "Import Notebook"
-msgstr "Importar Caderno"
-
-msgid "Upload a Python script (.py) or Jupyter notebook (.ipynb) file to import it into the system."
-msgstr "Envie um script Python (.py) ou um caderno Jupyter (.ipynb) para importá-lo ao sistema."
-
-msgid "Notebook File"
-msgstr "Arquivo do Caderno"
-
-msgid "Notebook Details (Optional)"
-msgstr "Detalhes do Caderno (Opcional)"
-
-msgid "Import Options"
-msgstr "Opções de Importação"
-
-msgid "Cancel"
-msgstr "Cancelar"
-
-# TyK class - stuff_titles
-msgid "Publications by year"
-msgstr "Publicações por ano"
-
-msgid "Most Cited Articles"
-msgstr "Artigos mais citados"
-
-msgid "Most Representative Articles"
-msgstr "Artigos mais representativos"
-
-msgid "Most Cited Authors"
-msgstr "Autores mais citados"
-
-msgid "Subject Categories"
-msgstr "Categorias temáticas"
-
-msgid "Subject Sub-Categories"
-msgstr "Sub-categorias temáticas"
-
-msgid "Journal Sources"
-msgstr "Fontes de revista"
-
-msgid "References"
-msgstr "Referências"
-
-msgid "Reference Sources"
-msgstr "Fontes de referência"
-
-msgid "Authors (Freq)"
-msgstr "Autores (Freq)"
-
-# TyK class - chart titles and defaults
-msgid "Cluster Graph (TOP)"
-msgstr "Grafo de Clusters (TOP)"
-
-msgid "Co-occurrence network"
-msgstr "Rede de co-ocorrência"
-
-#, python-brace-format
-msgid "Subclusters of {label}"
-msgstr "Subclusters de {label}"
-
-# TyK class - map labels
-msgid "Articles: "
-msgstr "Artigos: "
-
-msgid "Frequency: "
-msgstr "Frequência: "
-
-msgid "Value: "
-msgstr "Valor: "
-
-msgid "Frequency (%)"
-msgstr "Frequência (%)"
-
-msgid "Amount"
-msgstr "Quantidade"
-
-msgid "Countries — Global distribution of publications"
-msgstr "Países — Distribuição global de publicações"
-
-#, python-brace-format
-msgid "Countries — Cluster {id}"
-msgstr "Países — Cluster {id}"
-
-# TyK class - vis network
-msgid "Size"
-msgstr "Tamanho"
-
-msgid "Edge threshold"
-msgstr "Limiar de aresta"
-
-msgid "No summary available."
-msgstr "Sem resumo disponível."
-
-msgid "View full report"
-msgstr "Ver relatório completo"
-
-msgid "Click a node to read its summary"
-msgstr "Clique em um nó para ler seu resumo"
-
-# TyK class - clusters table
-msgid "No TOP clusters available."
-msgstr "Nenhum cluster TOP disponível."
-
-#, python-brace-format
-msgid "TOP <b>{top}</b> has no subclusters."
-msgstr "O TOP <b>{top}</b> não tem subclusters."
-
-msgid "No subclusters to display."
-msgstr "Nenhum subcluster para exibir."
-
-msgid "Name"
-msgstr "Nome"
-
-msgid "Articles"
-msgstr "Artigos"
-
-msgid "Subclusters"
-msgstr "Subclusters"
-
-#, python-brace-format
-msgid "Available <b>TOP</b> Clusters (total: {total})"
-msgstr "Clusters <b>TOP</b> disponíveis (total: {total})"
-
-#, python-brace-format
-msgid "Subclusters of <b>{top}</b> (ID {id}) (total: {total})"
-msgstr "Subclusters de <b>{top}</b> (ID {id}) (total: {total})"
-
-#, python-brace-format
-msgid "Available Subclusters (total: {total})"
-msgstr "Subclusters disponíveis (total: {total})"
-
-# TyK class - describe_cluster_params
-#, python-brace-format
-msgid "Invalid level: <b>{level}</b>. Use <b>TOP</b> or <b>SUB</b>."
-msgstr "Nível inválido: <b>{level}</b>. Use <b>TOP</b> ou <b>SUB</b>."
-
-msgid "Available TOP Clusters"
-msgstr "Clusters TOP disponíveis"
-
-msgid "Specify <b>cluster_top</b> (ID or name) to visualize."
-msgstr "Indique <b>cluster_top</b> (ID ou nome) para visualizar."
-
-#, python-brace-format
-msgid "TOP <b>{top}</b> not found."
-msgstr "TOP <b>{top}</b> não encontrado."
-
-msgid "Level: "
-msgstr "Nível: "
-
-msgid "Cluster: "
-msgstr "Cluster: "
-
-msgid "Type: "
-msgstr "Tipo: "
-
-msgid "Specify <b>cluster_sub</b> (ID or name) to visualize."
-msgstr "Indique <b>cluster_sub</b> (ID ou nome) para visualizar."
-
-#, python-brace-format
-msgid "Subclusters of TOP {name} (ID {id})"
-msgstr "Subclusters do TOP {name} (ID {id})"
-
-#, python-brace-format
-msgid "SUB <b>{sub}</b> does not exist in TOP <b>{top}</b> (ID {id})."
-msgstr "O SUB <b>{sub}</b> não existe no TOP <b>{top}</b> (ID {id})."
-
-# TyK class - build_figure
-#, python-brace-format
-msgid "{name}: no data for <b>{type}</b>."
-msgstr "{name}: sem dados para <b>{type}</b>."
-
-msgid "Year"
-msgstr "Ano"
-
-msgid "No. articles"
-msgstr "Nº artigos"
-
-msgid "articles"
-msgstr "artigos"
-
-msgid "Lower weight"
-msgstr "Menor peso"
-
-msgid "Higher weight"
-msgstr "Maior peso"
-
-msgid "Frequency"
-msgstr "Frequência"
-
-msgid "Size (articles)"
-msgstr "Tamanho (artigos)"
-
-#, python-brace-format
-msgid "Edge threshold: ≥ {threshold}"
-msgstr "Limiar de aresta: ≥ {threshold}"
-
-# TyK class - load_cluster_summaries
-#, python-brace-format
-msgid "Summaries loaded: <b>{count}</b>"
-msgstr "Resumos carregados: <b>{count}</b>"
-
-# TyK class - rename_cluster
-msgid "The parameter <b>level</b> must be 'TOP' or 'SUB'."
-msgstr "O parâmetro <b>level</b> deve ser 'TOP' ou 'SUB'."
-
-msgid "Specify a <b>cluster</b> (ID or name) to rename."
-msgstr "Indique um <b>cluster</b> (ID ou nome) para renomear."
-
-msgid "Specify the <b>new name</b> (new_name) to rename."
-msgstr "Indique o <b>novo nome</b> (new_name) para renomear."
-
-#, python-brace-format
-msgid "<b>Renamed successfully</b> — Level: <b>{level}</b> · ID: <code>{id}</code> · <i>{old}</i> → <b>{new}</b>"
-msgstr "<b>Renomeado com sucesso</b> — Nível: <b>{level}</b> · ID: <code>{id}</code> · <i>{old}</i> → <b>{new}</b>"
-
-#, python-brace-format
-msgid "SUB <code>{sid}</code> does not belong to the specified TOP (<b>{top}</b>, ID <code>{id}</code>)."
-msgstr "O SUB <code>{sid}</code> não pertence ao TOP indicado (<b>{top}</b>, ID <code>{id}</code>)."
-
-#, python-brace-format
-msgid "SUB <b>{sub}</b> not found."
-msgstr "SUB <b>{sub}</b> não encontrado."
-
-msgid "If the name exists in more than one TOP, also specify <b>top_id</b> (ID or name of the TOP)."
-msgstr "Se o nome existir em mais de um TOP, indique também <b>top_id</b> (ID ou nome do TOP)."
-
-msgid "The specified name matches multiple SUBs in different TOPs. Specify <b>top_id</b> to disambiguate:"
-msgstr "O nome indicado coincide com múltiplos SUBs em diferentes TOPs. Indique <b>top_id</b> para desambiguar:"
-
-# TyK class - notifications
-#, python-brace-format
-msgid "TOP <b>{top}</b> not found (use ID or exact name)."
-msgstr "TOP <b>{top}</b> não encontrado (use ID ou nome exato)."
-
-msgid "No co-occurrence data loaded. Cannot plot network."
-msgstr "Sem dados de co-ocorrência carregados. Não é possível plotar a rede."
-
-#, python-brace-format
-msgid "No nodes of type <b>{type}</b> found."
-msgstr "Nenhum nó do tipo <b>{type}</b> encontrado."
-
-msgid "size: "
-msgstr "tamanho: "
-
-msgid "<b>BCclusters.json</b> not found. Some functions may not be available."
-msgstr "<b>BCclusters.json</b> não encontrado. Algumas funções podem não estar disponíveis."
-
-msgid "No global country data available. Run tyk.refresh_aggregates()."
-msgstr "Sem dados globais de países. Execute tyk.refresh_aggregates()."
-
-msgid "Could not map countries to ISO3 codes."
-msgstr "Não foi possível mapear países a códigos ISO3."
-
-#, python-brace-format
-msgid "No country distribution (C) for cluster {id}."
-msgstr "Sem distribuição de países (C) para o cluster {id}."
-
-#, python-brace-format
-msgid "Could not build country table for cluster {id}."
-msgstr "Não foi possível construir a tabela de países para o cluster {id}."
-
-#, python-brace-format
-msgid "Could not map countries to ISO3 for cluster {id}."
-msgstr "Não foi possível mapear países para ISO3 para o cluster {id}."
-
-msgid "General Report"
-msgstr "Relatório geral"
-
-msgid "Frequency Files"
-msgstr "Arquivos de frequência"
-
-msgid "Reports"
-msgstr "Relatórios"
+msgid "Back to login"
+msgstr "Voltar ao login"
+
+msgid "Password Reset Sent"
+msgstr "Redefinição de Senha Enviada"
+
+msgid "Check your email"
+msgstr "Verifique seu e-mail"
+
+msgid ""
+"We've sent you an email with instructions to reset your password. Please "
+"check your inbox and follow the link."
+msgstr ""
+"Enviamos um e-mail com instruções para redefinir sua senha. Por favor "
+"verifique sua caixa de entrada e siga o link."
+
+msgid ""
+"If you don't receive an email within a few minutes, please check your spam "
+"folder."
+msgstr ""
+"Se não receber um e-mail em alguns minutos, verifique sua pasta de spam."
+
+msgid "Reset your password"
+msgstr "Redefina sua senha"
+
+msgid ""
+"Enter your email address and we'll send you instructions to reset your "
+"password."
+msgstr ""
+"Insira seu endereço de e-mail e enviaremos instruções para redefinir sua "
+"senha."
+
+msgid "Email Address"
+msgstr "Endereço de E-mail"
+
+msgid "Send Reset Link"
+msgstr "Enviar Link de Redefinição"
+
+#~ msgid ""
+#~ "Click \"Initialize Notebook\" to set up the environment before running "
+#~ "cells."
+#~ msgstr ""
+#~ "Clique em \"Inicializar Caderno\" para configurar o ambiente antes de "
+#~ "executar as células."
+
+#~ msgid "Refresh All"
+#~ msgstr "Atualizar Tudo"
+
+#~ msgid "Colorscale"
+#~ msgstr "Escala de Cores"
+
+#~ msgid "Co-oc Type"
+#~ msgstr "Tipo Co-oc"
+
+#~ msgid "Authors"
+#~ msgstr "Autores"
+
+#~ msgid "Journals"
+#~ msgstr "Revistas"
+
+#~ msgid "Max Nodes"
+#~ msgstr "Máx. Nós"
+
+#~ msgid "General Report"
+#~ msgstr "Relatório geral"

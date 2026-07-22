@@ -6,12 +6,6 @@
 {% block nav_container_class %}w-full{% endblock %}
 
 {% block nav_extra %}
-<a href="{% url 'notebook:dashboard' notebook.slug %}" class="text-gray-600 hover:text-purple-600 text-sm mr-4">
-    {% trans "Dashboard" %}
-</a>
-<a href="{% url 'notebook:detail' notebook.slug %}" class="text-gray-600 hover:text-blue-600 text-sm mr-4">
-    {% trans "Notebook" %}
-</a>
 <button onclick="resetSession()" class="text-gray-600 hover:text-red-600 text-sm">
     {% trans "Reset" %}
 </button>
@@ -31,11 +25,22 @@
         <p class="text-sm text-gray-600">{{ notebook.description }}</p>
         {% endif %}
     </div>
-    <button onclick="runSetup()" id="setup-btn"
-            class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md transition-colors flex items-center text-sm">
-        <span id="setup-spinner" class="loading-spinner mr-2 hidden"></span>
-        <span id="setup-text">{% trans "Initialize" %}</span>
-    </button>
+    <div class="flex items-center gap-2">
+        <!-- Overview omitted: current location -->
+        <a href="{% url 'notebook:dashboard' notebook.slug %}"
+           class="px-4 py-2 rounded-md text-sm font-medium border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors">
+            {% trans "Dashboard" %}
+        </a>
+        <a href="{% url 'notebook:detail' notebook.slug %}"
+           class="px-4 py-2 rounded-md text-sm font-medium border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors">
+            {% trans "Notebook" %}
+        </a>
+        <button onclick="runSetup()" id="setup-btn"
+                class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md transition-colors flex items-center text-sm">
+            <span id="setup-spinner" class="loading-spinner mr-2 hidden"></span>
+            <span id="setup-text">{% trans "Initialize" %}</span>
+        </button>
+    </div>
 </div>
 
 <!-- Setup Banner -->
@@ -48,68 +53,23 @@
 </div>
 
 <!-- Three-section layout -->
-<div class="flex gap-4" style="height: calc(100vh - 210px);">
+<div class="flex gap-4" style="min-height: calc(100vh - 210px);">
 
     <!-- LEFT COLUMN: Dialog + Details -->
     <div class="flex flex-col gap-4" style="width: 38%; min-width: 320px;">
 
-        <!-- 1. DIALOG SECTION -->
-        <div class="bg-white rounded-lg shadow-md flex flex-col overflow-hidden" style="flex: 0 0 auto; max-height: 48%;">
-            <div class="bg-teal-600 px-4 py-2 flex-shrink-0">
-                <h2 class="font-semibold text-white text-sm">{% trans "Explore Data" %}</h2>
-            </div>
-
-            <!-- Quick action chips -->
-            <div class="px-3 pt-2 pb-1 flex flex-wrap gap-1.5 flex-shrink-0 border-b border-gray-100">
-                <button onclick="dialogQuery('cluster_list', {})"
-                        class="dialog-chip px-2.5 py-1 rounded-full text-xs font-medium bg-teal-50 text-teal-700 hover:bg-teal-100 border border-teal-200 transition-colors">
-                    {% trans "Cluster List" %}
-                </button>
-                <button onclick="dialogQuery('top_countries', {})"
-                        class="dialog-chip px-2.5 py-1 rounded-full text-xs font-medium bg-teal-50 text-teal-700 hover:bg-teal-100 border border-teal-200 transition-colors">
-                    {% trans "Countries Map" %}
-                </button>
-                <button onclick="dialogQuery('top_keywords', {})"
-                        class="dialog-chip px-2.5 py-1 rounded-full text-xs font-medium bg-teal-50 text-teal-700 hover:bg-teal-100 border border-teal-200 transition-colors">
-                    {% trans "Top Keywords" %}
-                </button>
-            </div>
-
-            <!-- Cluster selector row -->
-            <div class="px-3 pt-2 pb-2 flex gap-2 items-end flex-shrink-0 border-b border-gray-100">
-                <div class="flex-1">
-                    <label class="block text-xs font-medium text-gray-500 mb-1">{% trans "Top Cluster" %}</label>
-                    <select id="dialog-cluster-sel" class="w-full border border-gray-300 rounded px-2 py-1.5 text-xs">
-                        <option value="">— {% trans "select" %} —</option>
-                    </select>
-                </div>
-                <div class="flex-1">
-                    <label class="block text-xs font-medium text-gray-500 mb-1">{% trans "Subcluster" %}</label>
-                    <select id="dialog-sub-sel" class="w-full border border-gray-300 rounded px-2 py-1.5 text-xs" disabled>
-                        <option value="">— {% trans "select" %} —</option>
-                    </select>
-                </div>
-                <button onclick="dialogQueryCluster()"
-                        class="bg-teal-600 hover:bg-teal-700 text-white px-3 py-1.5 rounded text-xs flex-shrink-0">
-                    {% trans "Query" %}
-                </button>
-            </div>
-
-            <!-- Dialog message area -->
-            <div class="flex-1 overflow-y-auto px-3 py-2 space-y-2 min-h-0" id="dialog-messages">
-                <div class="text-xs text-gray-400 text-center pt-2">
-                    {% trans "Select a query above to explore the dataset." %}
-                </div>
-            </div>
-        </div>
-
-        <!-- 2. DETAILS SECTION -->
-        <div class="bg-white rounded-lg shadow-md flex flex-col overflow-hidden flex-1 min-h-0">
-            <div class="bg-blue-600 px-4 py-2 flex-shrink-0">
+        <!-- 1. DETAILS SECTION -->
+        <div id="dd-card" class="bg-white rounded-lg shadow-md flex flex-col overflow-hidden flex-shrink-0 min-h-0">
+            <button onclick="toggleAccordion('dd')"
+                    class="w-full bg-blue-600 hover:bg-blue-700 px-4 py-2 flex items-center justify-between flex-shrink-0 rounded-t-lg transition-colors">
                 <h2 class="font-semibold text-white text-sm">{% trans "Dataset Details" %}</h2>
-            </div>
+                <svg id="dd-chevron" class="w-4 h-4 text-blue-200 transition-transform duration-200"
+                     fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+            </button>
 
-            <div class="flex-1 overflow-y-auto px-4 py-3 space-y-4" id="details-body">
+            <div class="hidden flex-1 overflow-y-auto px-4 py-3 space-y-4" id="dd-body">
                 <!-- Placeholder before data loads -->
                 <div id="details-placeholder" class="text-xs text-gray-400 text-center pt-4">
                     {% trans "Initialize to load dataset details." %}
@@ -157,13 +117,85 @@
                 </div>
             </div>
         </div>
+
+        <!-- 2. EXPLORE / QUESTIONS SECTION -->
+        <div id="ed-card" class="bg-white rounded-lg shadow-md flex flex-col overflow-hidden flex-shrink-0 min-h-0">
+            <button onclick="toggleAccordion('ed')"
+                    class="w-full bg-teal-600 hover:bg-teal-700 px-4 py-2 flex items-center justify-between flex-shrink-0 rounded-t-lg transition-colors">
+                <h2 class="font-semibold text-white text-sm">{% trans "Explore Data" %}</h2>
+                <svg id="ed-chevron" class="w-4 h-4 text-teal-200 transition-transform duration-200"
+                     fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+            </button>
+
+            <div id="ed-body" class="hidden flex-1 overflow-y-auto min-h-0 px-3 py-3 space-y-3">
+
+                <!-- Scope selector -->
+                <div>
+                    <label class="block text-[11px] font-semibold text-gray-500 uppercase tracking-wide mb-1.5">{% trans "Scope" %}</label>
+                    <div class="grid grid-cols-3 gap-1 bg-gray-100 rounded-lg p-1">
+                        <button type="button" data-scope="network" onclick="setScope('network')"
+                                class="scope-btn px-2 py-1.5 rounded-md text-xs font-medium transition-colors text-center">
+                            <span class="block text-base leading-none mb-0.5">🌐</span>{% trans "Full Network" %}
+                        </button>
+                        <button type="button" data-scope="cluster" onclick="setScope('cluster')"
+                                class="scope-btn px-2 py-1.5 rounded-md text-xs font-medium transition-colors text-center">
+                            <span class="block text-base leading-none mb-0.5">🗂️</span>{% trans "Cluster" %}
+                        </button>
+                        <button type="button" data-scope="subcluster" onclick="setScope('subcluster')"
+                                class="scope-btn px-2 py-1.5 rounded-md text-xs font-medium transition-colors text-center">
+                            <span class="block text-base leading-none mb-0.5">📁</span>{% trans "Subcluster" %}
+                        </button>
+                    </div>
+
+                    <!-- Conditional cluster / subcluster dropdowns -->
+                    <div id="scope-selectors" class="mt-2 hidden">
+                        <div class="flex gap-2 items-end">
+                            <div class="flex-1" id="scope-top-wrap">
+                                <label class="block text-[11px] font-medium text-gray-500 mb-1">{% trans "Top Cluster" %}</label>
+                                <select id="dialog-cluster-sel" class="w-full border border-gray-300 rounded px-2 py-1.5 text-xs">
+                                    <option value="">— {% trans "select" %} —</option>
+                                </select>
+                            </div>
+                            <div class="flex-1 hidden" id="scope-sub-wrap">
+                                <label class="block text-[11px] font-medium text-gray-500 mb-1">{% trans "Subcluster" %}</label>
+                                <select id="dialog-sub-sel" class="w-full border border-gray-300 rounded px-2 py-1.5 text-xs" disabled>
+                                    <option value="">— {% trans "select" %} —</option>
+                                </select>
+                            </div>
+                        </div>
+                        <button type="button" onclick="dialogQueryCluster()"
+                                class="mt-1.5 text-xs font-medium text-teal-700 hover:underline">
+                            {% trans "View cluster details" %} →
+                        </button>
+                    </div>
+
+                    <!-- Live scope preview -->
+                    <p class="mt-2 text-[11px] text-gray-500">
+                        {% trans "Asking about" %}:
+                        <span id="scope-preview" class="font-semibold text-teal-700">{% trans "the full network" %}</span>
+                    </p>
+                </div>
+
+                <!-- Question cards (rendered by JS) -->
+                <div class="space-y-1.5" id="question-list"></div>
+
+                <!-- Answer / dialog area -->
+                <div id="dialog-messages" class="space-y-2 pt-1">
+                    <div class="text-xs text-gray-400 text-center pt-1">
+                        {% trans "Pick a scope and a question above to explore the dataset." %}
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <!-- RIGHT COLUMN: Accordions -->
-    <div class="flex-1 flex flex-col gap-3 min-h-0 overflow-hidden">
+    <div class="flex-1 flex flex-col gap-3 min-h-0 min-w-0">
 
         <!-- ACCORDION: Research Nodes -->
-        <div id="rn-card" class="bg-white rounded-lg shadow-md flex flex-col flex-1 min-h-0 overflow-hidden">
+        <div id="rn-card" class="bg-white rounded-lg shadow-md flex flex-col flex-shrink-0 min-h-0 overflow-hidden">
             <button onclick="toggleAccordion('rn')"
                     class="w-full bg-indigo-600 hover:bg-indigo-700 px-4 py-2 flex items-center justify-between flex-shrink-0 rounded-t-lg transition-colors">
                 <h2 class="font-semibold text-white text-sm">{% trans "Full Network Nodes Overview" %}</h2>
@@ -179,7 +211,7 @@
             </button>
 
             <!-- Sankey container: position:relative so absolute children are clipped inside it -->
-            <div id="rn-body" class="flex-1 min-h-0 relative overflow-hidden">
+            <div id="rn-body" class="hidden min-h-0 relative overflow-hidden">
                 <div id="dv-loading" class="absolute inset-0 flex items-center justify-center text-gray-400 text-sm">
                     {% trans "Initialize to load the dynamic view." %}
                 </div>
@@ -237,6 +269,19 @@
     </div>
 </div>
 
+<!-- Temporal Evolution full-screen modal -->
+<div id="te-modal" class="hidden fixed inset-0 z-50 bg-black/60 p-4 sm:p-8"
+     onclick="if (event.target === this) closeTeModal()">
+    <div class="bg-white rounded-lg shadow-2xl w-full h-full max-w-6xl mx-auto flex flex-col overflow-hidden">
+        <div class="bg-violet-600 px-4 py-2 flex items-center justify-between flex-shrink-0">
+            <h2 class="font-semibold text-white text-sm">{% trans "Network Temporal Evolution" %}</h2>
+            <button type="button" onclick="closeTeModal()"
+                    class="text-violet-100 hover:text-white text-xl leading-none">&times;</button>
+        </div>
+        <div id="te-modal-body" class="flex-1 min-h-0"></div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block extra_js %}
@@ -251,10 +296,62 @@ let dynamicLinks = [];
 let _dvSvg = null;
 let _dvZoomBehavior = null;
 let _rnResizeTimer = null;
+let teEvolutionUrl = null;
+let teFrame = null; // reference to the inline lineage iframe
+
+// ── Temporal Evolution modal ───────────────────────────────────────────────────
+
+// The lineage HTML is a Plotly figure with a hard-coded 1740×1336 layout and
+// autosize:false, so it ignores its container. Relaying it out just repositions
+// nodes while big elements keep their pixel size, so instead we render it at its
+// native size and CSS-scale the whole iframe down until its full width fits the
+// panel — a true zoom-out where everything shrinks proportionally.
+function zoomFitTe(iframe) {
+    if (!iframe) return;
+    const wrap = iframe.parentElement;
+    const availW = wrap ? wrap.clientWidth : 0;
+    if (!availW) return; // hidden/collapsed — refit when shown
+    let natW = 1740, natH = 1336; // fallback to the known figure size
+    try {
+        const gd = iframe.contentDocument && iframe.contentDocument.querySelector('.plotly-graph-div');
+        if (gd) {
+            natW = (gd.layout && gd.layout.width) || gd.offsetWidth || natW;
+            natH = (gd.layout && gd.layout.height) || gd.offsetHeight || natH;
+        }
+    } catch (e) { /* cross-doc access failed — use fallback size */ }
+    const scale = availW / natW;
+    iframe.style.width = natW + 'px';
+    iframe.style.height = natH + 'px';
+    iframe.style.transformOrigin = 'top left';
+    iframe.style.transform = `scale(${scale})`;
+    // Collapse the wrapper to the scaled footprint (no empty space / clipping).
+    if (wrap) wrap.style.height = (natH * scale) + 'px';
+}
+
+function onTeInlineLoad(iframe) {
+    teFrame = iframe;
+    zoomFitTe(iframe);
+}
+
+function openTeModal() {
+    if (!teEvolutionUrl) return;
+    // Modal shows the plot at its original size; scroll within to view all of it.
+    document.getElementById('te-modal-body').innerHTML =
+        `<iframe src="${teEvolutionUrl}" title="{% trans "Network Temporal Evolution" %}" `
+      + `class="w-full h-full block" style="border:0;"></iframe>`;
+    document.getElementById('te-modal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeTeModal() {
+    document.getElementById('te-modal').classList.add('hidden');
+    document.getElementById('te-modal-body').innerHTML = ''; // free the iframe
+    document.body.style.overflow = '';
+}
 
 // ── Accordion ─────────────────────────────────────────────────────────────────
 
-const _accordionOpen = { te: false, rn: true };
+const _accordionOpen = { te: false, rn: false, ed: false, dd: false };
 
 function fitRnBody() {
     const body = document.getElementById('rn-body');
@@ -262,7 +359,9 @@ function fitRnBody() {
     // Measure from the header button's bottom edge to bottom of viewport
     const btn = body.previousElementSibling;
     const ref = btn ? btn.getBoundingClientRect().bottom : body.getBoundingClientRect().top;
-    const h = Math.max(200, window.innerHeight - ref - 20);
+    // A reasonable, bounded height — enough to read the flow without eating the
+    // whole viewport (the page scrolls, so it doesn't need to be full-height).
+    const h = Math.max(360, Math.min(600, window.innerHeight - ref - 20));
     body.style.height = h + 'px';
     clearTimeout(_rnResizeTimer);
     _rnResizeTimer = setTimeout(function () {
@@ -276,14 +375,13 @@ function toggleAccordion(key) {
     const chevron = document.getElementById(`${key}-chevron`);
     body.classList.toggle('hidden', !_accordionOpen[key]);
     chevron.classList.toggle('rotate-180', _accordionOpen[key]);
-    if (key === 'rn') {
-        const card = document.getElementById('rn-card');
-        if (card) {
-            card.classList.toggle('flex-1', _accordionOpen[key]);
-            card.classList.toggle('flex-shrink-0', !_accordionOpen[key]);
-        }
-        if (_accordionOpen[key]) fitRnBody();
-    }
+
+    // Cards keep their natural height (the page scrolls) rather than growing to
+    // fill the column — otherwise an expanded panel would stretch its content
+    // (e.g. the sankey) to full height.
+    if (key === 'rn' && _accordionOpen[key]) fitRnBody();
+    // Refit the lineage plot once its panel is actually visible (was 0-width while collapsed).
+    if (key === 'te' && _accordionOpen[key]) setTimeout(() => zoomFitTe(teFrame), 60);
 }
 
 // ── Setup ────────────────────────────────────────────────────────────────────
@@ -426,6 +524,29 @@ async function loadDetails() {
                 ul.appendChild(li);
             });
         }
+
+        // Network Temporal Evolution — load the subnode-lineage interactive HTML
+        // in an isolated iframe (it's a standalone document with its own scripts).
+        const te = document.getElementById('te-body');
+        if (d.temporal_evolution && d.temporal_evolution.url) {
+            teEvolutionUrl = d.temporal_evolution.url;
+            te.classList.remove('px-4', 'py-3', 'text-xs', 'text-gray-400', 'italic');
+            te.innerHTML =
+                `<div class="relative w-full overflow-hidden rounded-b-lg">`
+              + `<button type="button" onclick="openTeModal()" title="{% trans "Expand" %}" `
+              +   `class="absolute top-2 right-2 z-10 inline-flex items-center gap-1 bg-white/90 hover:bg-white `
+              +   `border border-gray-200 rounded px-2 py-1 text-xs font-medium text-violet-700 shadow-sm">`
+              +   `<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">`
+              +   `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" `
+              +   `d="M4 8V4h4M20 8V4h-4M4 16v4h4m12-4v4h-4"/></svg>`
+              +   `{% trans "Expand" %}</button>`
+              + `<iframe src="${teEvolutionUrl}" title="{% trans "Network Temporal Evolution" %}" `
+              +   `onload="onTeInlineLoad(this)" class="block w-full" style="height:560px;border:0;"></iframe>`
+              + `</div>`;
+        } else {
+            teEvolutionUrl = null;
+            te.innerHTML = '{% trans "No temporal evolution data available for this dataset." %}';
+        }
     } catch (e) { /* silently ignore */ }
 }
 
@@ -449,7 +570,7 @@ async function loadClusterDropdowns() {
         topSel.addEventListener('change', () => {
             const subSel = document.getElementById('dialog-sub-sel');
             subSel.innerHTML = '<option value="">— {% trans "select" %} —</option>';
-            const top = clusterData.find(c => c.id === topSel.value);
+            const top = clusterData.find(c => String(c.id) === String(topSel.value));
             if (top && top.subclusters.length) {
                 top.subclusters.forEach(s => {
                     const opt = document.createElement('option');
@@ -461,8 +582,148 @@ async function loadClusterDropdowns() {
             } else {
                 subSel.disabled = true;
             }
+            renderQuestions();
         });
     } catch (e) { /* ignore */ }
+}
+
+// ── Scoped questions ───────────────────────────────────────────────────────────
+// Three scope levels — full network, a top cluster, or a subcluster — feed the
+// same four questions. Each question rephrases itself live so the user always
+// sees the exact wording that will be asked. All user-facing text is wrapped for
+// translation so it lands in the .po catalog and can be localized.
+let questionScope = 'network'; // 'network' | 'cluster' | 'subcluster'
+
+// Each scope keeps its own answer window, so switching scopes shows that
+// scope's own exchange instead of another section's replies.
+const EMPTY_DIALOG_HTML = '<div class="text-xs text-gray-400 text-center pt-1">{% trans "Pick a scope and a question above to explore the dataset." %}</div>';
+const scopeMessages = { network: '', cluster: '', subcluster: '' };
+
+// Each question is a full translatable sentence with a [[scope]] placeholder,
+// so translators keep full control of word order per language.
+const QUESTIONS = [
+    { key: 'key_texts',     icon: '📚',
+      template: '{% trans "What are the 5 most important texts I should read to understand [[scope]]?" %}' },
+    { key: 'methodologies', icon: '🔬',
+      template: '{% trans "Provide a list of the most relevant methodologies used in [[scope]]" %}' },
+    { key: 'frameworks',    icon: '🏛️',
+      template: '{% trans "Provide a breakdown of the main theoretical frameworks deployed in [[scope]]" %}' },
+    { key: 'interview',     icon: '🎤',
+      template: '{% trans "Provide a guide of questions for conducting an in-depth interview with the main authors of [[scope]]" %}' },
+];
+
+// Spanish "de el" → "del" / "a el" → "al" contraction. Applied to the composed
+// sentence; it simply never matches once the strings are translated (e.g.
+// "of the cluster"), so it's a safe display-only fixup.
+function contractES(s) {
+    return s.replace(/\bde el\b/g, 'del').replace(/\ba el\b/g, 'al');
+}
+
+// Resolve the current scope into a translatable noun phrase + a `ready` flag
+// (false when a required cluster/subcluster hasn't been picked yet).
+function scopeNoun() {
+    if (questionScope === 'network')
+        return { text: '{% trans "the full network" %}', ready: true };
+
+    const topSel = document.getElementById('dialog-cluster-sel');
+    const top = clusterData.find(c => String(c.id) === String(topSel.value));
+
+    if (questionScope === 'cluster') {
+        if (!top) return { text: '{% trans "the cluster (select one)" %}', ready: false };
+        return { text: `{% trans "the cluster" %} «${top.id} — ${top.label}»`, ready: true };
+    }
+
+    // subcluster
+    if (!top) return { text: '{% trans "the subcluster (select a cluster first)" %}', ready: false };
+    const subSel = document.getElementById('dialog-sub-sel');
+    const sub = (top.subclusters || []).find(s => String(s.id) === String(subSel.value));
+    if (!sub) return { text: '{% trans "the subcluster (select one)" %}', ready: false };
+    return { text: `{% trans "the subcluster" %} «${sub.id} — ${sub.label}»`, ready: true };
+}
+
+// Fill the question template with the scope phrase. `bold` highlights the scope
+// words as they read in the final (possibly contracted) sentence.
+function composeQuestion(q, bold) {
+    const noun = scopeNoun();
+    const plain = contractES(q.template.replace('[[scope]]', noun.text));
+    if (!bold) return plain;
+    let scopeStr = noun.text;
+    if (!plain.includes(noun.text)) {
+        // The article merged into a contraction (e.g. "el cluster" → "del cluster").
+        const rest = noun.text.replace(/^el\s+/, '');
+        scopeStr = plain.includes('del ' + rest) ? 'del ' + rest
+                 : plain.includes('al ' + rest)  ? 'al ' + rest
+                 : noun.text;
+    }
+    return plain.replace(scopeStr, `<span class="font-semibold text-teal-700">${scopeStr}</span>`);
+}
+
+function renderQuestions() {
+    const list = document.getElementById('question-list');
+    if (!list) return;
+    list.innerHTML = '';
+    QUESTIONS.forEach(q => {
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'question-card w-full text-left px-3 py-2 rounded-lg border border-gray-200 hover:border-teal-400 hover:bg-teal-50 transition-colors flex gap-2 items-start';
+        btn.onclick = () => askQuestion(q.key);
+        btn.innerHTML = `<span class="text-base leading-none mt-0.5 flex-shrink-0">${q.icon}</span>`
+                      + `<span class="text-xs text-gray-700 leading-snug">${composeQuestion(q, true)}</span>`;
+        list.appendChild(btn);
+    });
+    const prev = document.getElementById('scope-preview');
+    if (prev) prev.textContent = scopeNoun().text;
+}
+
+function setScope(scope) {
+    if (scope !== questionScope) {
+        // Stash the current scope's exchange, then bring back the target scope's.
+        const dm = document.getElementById('dialog-messages');
+        scopeMessages[questionScope] = dm.innerHTML;
+        questionScope = scope;
+        dm.innerHTML = scopeMessages[scope] || EMPTY_DIALOG_HTML;
+    }
+    document.querySelectorAll('.scope-btn').forEach(b => {
+        const active = b.dataset.scope === scope;
+        b.classList.toggle('bg-white', active);
+        b.classList.toggle('text-teal-700', active);
+        b.classList.toggle('shadow-sm', active);
+        b.classList.toggle('text-gray-500', !active);
+    });
+    const selectors = document.getElementById('scope-selectors');
+    const subWrap = document.getElementById('scope-sub-wrap');
+    if (scope === 'network') {
+        selectors.classList.add('hidden');
+    } else {
+        selectors.classList.remove('hidden');
+        subWrap.classList.toggle('hidden', scope !== 'subcluster');
+    }
+    renderQuestions();
+}
+
+function askQuestion(key) {
+    if (!isSetupComplete) { appendMessage('system', '{% trans "Please initialize first." %}'); return; }
+    const q = QUESTIONS.find(x => x.key === key);
+    if (!q) return;
+
+    if (!scopeNoun().ready) {
+        appendMessage('system', questionScope === 'subcluster'
+            ? '{% trans "Select a cluster and a subcluster first." %}'
+            : '{% trans "Select a cluster first." %}');
+        return;
+    }
+
+    // Only one question (and its answer) at a time — clear any previous exchange.
+    document.getElementById('dialog-messages').innerHTML = '';
+
+    appendMessage('user', composeQuestion(q, false));
+    const msgId = appendMessage('assistant', '{% trans "Loading..." %}', true);
+    // Interface stage — the data-backed answer is wired next.
+    const el = document.getElementById(msgId);
+    if (el) {
+        el.className = el.className.replace('bg-gray-50', 'bg-amber-50').replace('border-gray-200', 'border-amber-200');
+        el.innerHTML = '<span class="italic text-amber-700">{% trans "This answer will be generated from the analyzed dataset (backend coming next)." %}</span>';
+    }
 }
 
 // ── Dialog queries ────────────────────────────────────────────────────────────
@@ -809,6 +1070,21 @@ document.addEventListener('DOMContentLoaded', function () {
     fitRnBody();
     window.addEventListener('resize', fitRnBody);
     new ResizeObserver(fitRnBody).observe(document.getElementById('rn-body'));
+
+    // Scoped-questions UI
+    document.getElementById('dialog-sub-sel').addEventListener('change', renderQuestions);
+    setScope('network');
+
+    // Close the temporal-evolution modal on Escape
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') closeTeModal();
+    });
+
+    // Keep the inline lineage plot zoom-fitted to the panel on resize.
+    window.addEventListener('resize', () => {
+        if (_accordionOpen.te) zoomFitTe(teFrame);
+    });
+
     runSetup();
 });
 </script>

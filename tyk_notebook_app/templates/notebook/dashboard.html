@@ -6,11 +6,6 @@
 {% block nav_container_class %}w-full{% endblock %}
 
 {% block nav_extra %}
-{% if request.user.is_superuser %}
-<a href="{% url 'notebook:detail' notebook.slug %}" class="text-gray-600 hover:text-blue-600 text-sm mr-4">
-    {% trans "Classic View" %}
-</a>
-{% endif %}
 <a href="{% url 'notebook:history' notebook.slug %}" class="text-gray-600 hover:text-blue-600 text-sm mr-4" target="_blank">
     {% trans "History" %}
 </a>
@@ -33,11 +28,24 @@
         <p class="text-sm text-gray-600">{{ notebook.description }}</p>
         {% endif %}
     </div>
-    <button onclick="runSetup()" id="setup-btn"
-            class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md transition-colors flex items-center text-sm">
-        <span id="setup-spinner" class="loading-spinner mr-2 hidden"></span>
-        <span id="setup-text">{% trans "Initialize" %}</span>
-    </button>
+    <div class="flex items-center gap-2">
+        {% if notebook.overview_enabled %}
+        <a href="{% url 'notebook:overview' notebook.slug %}"
+           class="px-4 py-2 rounded-md text-sm font-medium border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors">
+            {% trans "Overview" %}
+        </a>
+        {% endif %}
+        <!-- Dashboard omitted: current location -->
+        <a href="{% url 'notebook:detail' notebook.slug %}"
+           class="px-4 py-2 rounded-md text-sm font-medium border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors">
+            {% trans "Notebook" %}
+        </a>
+        <button onclick="runSetup()" id="setup-btn"
+                class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md transition-colors flex items-center text-sm">
+            <span id="setup-spinner" class="loading-spinner mr-2 hidden"></span>
+            <span id="setup-text">{% trans "Initialize" %}</span>
+        </button>
+    </div>
 </div>
 
 <!-- Setup Banner -->

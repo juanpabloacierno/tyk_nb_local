@@ -21,7 +21,18 @@
             <p class="mt-1 text-gray-600">{{ notebook.description }}</p>
             {% endif %}
         </div>
-        <div class="flex space-x-3">
+        <div class="flex items-center gap-2">
+            {% if notebook.overview_enabled %}
+            <a href="{% url 'notebook:overview' notebook.slug %}"
+               class="px-4 py-2 rounded-md font-medium border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors">
+                {% trans "Overview" %}
+            </a>
+            {% endif %}
+            <a href="{% url 'notebook:dashboard' notebook.slug %}"
+               class="px-4 py-2 rounded-md font-medium border border-gray-300 text-gray-700 hover:bg-gray-50 transition-colors">
+                {% trans "Dashboard" %}
+            </a>
+            <!-- Notebook omitted: current location -->
             <button onclick="runSetup()" id="setup-btn"
                     class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-md transition-colors flex items-center">
                 <span id="setup-spinner" class="loading-spinner mr-2 hidden"></span>
